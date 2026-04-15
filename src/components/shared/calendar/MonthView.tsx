@@ -27,6 +27,11 @@ interface MonthViewProps {
  * @param onSlotClick - Called when a booking cell is clicked
  * @param readOnly - If true, removes click handlers (for public view)
  * @param isAdmin - If true, shows player names on cells (for admin view)
+ *
+ * Responsive notes:
+ * - Mobile-first 7-column grid without fixed min-width constraints
+ * - Typography scales from `text-xs` to `md:text-base`
+ * - Cell heights and booking stack area scale by breakpoint
  */
 export default function MonthView({ currentDate, onDateClick, bookings = [], onSlotClick, readOnly = false, isAdmin = false }: MonthViewProps) {
   const monthStart = startOfMonth(currentDate);
@@ -52,7 +57,7 @@ export default function MonthView({ currentDate, onDateClick, bookings = [], onS
           key={day.toString()}
           onClick={() => onDateClick(cloneDay)}
           className={cn(
-            "min-h-[120px] p-2 border-r border-b border-neutral-200 transition-colors hover:bg-neutral-50 cursor-pointer relative",
+            "relative min-h-[96px] border-r border-b border-neutral-200 p-2 transition-colors hover:bg-neutral-50 cursor-pointer sm:min-h-[112px] md:min-h-[120px]",
             !isSameMonth(day, monthStart) && "text-neutral-400 bg-neutral-50/30",
             isSameDay(day, today) && "bg-blue-50/30"
           )}
@@ -60,7 +65,7 @@ export default function MonthView({ currentDate, onDateClick, bookings = [], onS
           <div className="flex justify-between items-start">
             <span
               className={cn(
-                "flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium",
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium sm:text-sm md:text-base",
                 isSameDay(day, today) ? "bg-blue-600 text-white" : "text-neutral-700"
               )}
             >
@@ -68,7 +73,7 @@ export default function MonthView({ currentDate, onDateClick, bookings = [], onS
             </span>
           </div>
           {/* Bookings rendering */}
-          <div className="mt-1 flex flex-col gap-1 overflow-y-auto max-h-[80px]">
+          <div className="mt-1 flex max-h-[74px] flex-col gap-1 overflow-y-auto sm:max-h-[86px] md:max-h-[90px]">
             {bookings.filter(b => isSameDay(new Date(b.start_time), cloneDay)).map(b => (
               <CalendarSlot
                 key={b.id}
@@ -95,19 +100,22 @@ export default function MonthView({ currentDate, onDateClick, bookings = [], onS
   }
 
   const weekDays = [];
-  let weekStartDate = startOfWeek(currentDate);
+  const weekStartDate = startOfWeek(currentDate);
   for (let i = 0; i < 7; i++) {
     weekDays.push(
-      <div key={i} className="text-center py-3 text-sm font-semibold text-neutral-500 border-r border-b border-neutral-200 uppercase tracking-wider">
+      <div key={i} className="border-r border-b border-neutral-200 py-2 text-center text-xs font-semibold uppercase tracking-wide text-neutral-500 sm:py-3 sm:text-sm md:text-base">
         {format(addDays(weekStartDate, i), "EEE")}
       </div>
     );
   }
 
   return (
-    <div className="w-full flex-col overflow-x-auto">
-      <div className="min-w-[700px]">
-        <div className="grid grid-cols-7">{weekDays}</div>
+    <div className="w-full flex-col overflow-x-hidden">
+      <div className="w-full">
+        {/* US2: Sticky header that remains visible during scroll */}
+        <div className="sticky top-0 z-10 grid grid-cols-7 bg-white border-b-2 border-neutral-200">
+          {weekDays}
+        </div>
         {rows}
       </div>
     </div>

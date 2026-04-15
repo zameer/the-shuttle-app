@@ -46,13 +46,12 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
   const ROW_HEIGHT = 80 // px per hour
 
   return (
-    <div className="flex flex-col h-full bg-white relative overflow-hidden">
-      <div className="flex-1 overflow-auto">
-        <div className="min-w-[800px] h-full flex flex-col">
+    <div className="relative flex h-full flex-col bg-white">
+      <div className="w-full h-full flex flex-col">
 
           {/* Week Header */}
-          <div className="grid grid-cols-[80px_1fr] border-b border-neutral-200 sticky top-0 bg-white z-40 shadow-sm">
-            <div className="p-4 border-r border-neutral-200 flex items-end justify-center sticky left-0 bg-white z-50 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
+          <div className="sticky top-0 z-50 grid grid-cols-[56px_1fr] border-b border-neutral-200 bg-white shadow-sm sm:grid-cols-[64px_1fr] md:grid-cols-[80px_1fr]">
+            <div className="p-2 sm:p-3 md:p-4 border-r border-neutral-200 flex items-end justify-center sticky left-0 bg-white z-50 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
               <span className="text-xs font-medium text-neutral-400">GMT+5:30</span>
             </div>
             <div className="grid grid-cols-7">
@@ -60,12 +59,12 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
                 const day = addDays(startDate, i);
                 const isToday = isSameDay(day, today);
                 return (
-                  <div key={i} className="p-3 text-center border-r border-neutral-200 relative">
-                    <div className={cn("text-sm font-medium", isToday ? "text-blue-600" : "text-neutral-500")}>
+                  <div key={i} className="p-1.5 sm:p-2 md:p-3 text-center border-r border-neutral-200 relative">
+                    <div className={cn("text-xs sm:text-sm font-medium", isToday ? "text-blue-600" : "text-neutral-500")}>
                       {format(day, "EEE")}
                     </div>
                     <div className={cn(
-                      "mx-auto mt-1 flex h-8 w-8 items-center justify-center rounded-full text-lg",
+                      "mx-auto mt-1 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-sm sm:text-lg",
                       isToday ? "bg-blue-600 text-white font-bold" : "text-neutral-800"
                     )}>
                       {format(day, "d")}
@@ -77,12 +76,16 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
           </div>
 
           {/* Time Grid */}
-          <div className="grid grid-cols-[80px_1fr] flex-1">
+          <div className="grid grid-cols-[56px_1fr] sm:grid-cols-[64px_1fr] md:grid-cols-[80px_1fr] flex-1">
             {/* Sticky Time Labels */}
             <div className="border-r border-neutral-200 bg-white sticky left-0 z-30 shadow-[1px_0_0_rgba(0,0,0,0.05)]">
               {hours.map((hour) => (
-                <div key={hour} style={{ height: `${ROW_HEIGHT}px` }} className="text-right pr-4 pt-2 border-b border-neutral-200">
-                  <span className="text-xs font-medium text-neutral-400 -translate-y-1/2 block absolute">
+                <div
+                  key={hour}
+                  style={{ height: `${ROW_HEIGHT}px` }}
+                  className="relative flex items-start justify-end border-b border-neutral-200 pr-2 pt-1 sm:pr-3 md:pr-4 md:pt-2"
+                >
+                  <span className="block text-[11px] font-medium leading-none text-neutral-400 sm:text-xs">
                     {format(setHours(new Date(), hour), "h a")}
                   </span>
                 </div>
@@ -206,7 +209,6 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
             </div>
           </div>
 
-        </div>
       </div>
     </div>
   );

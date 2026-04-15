@@ -1,21 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePlayerSearch, useCreatePlayer } from '@/features/players/usePlayers'
+import type { PlayerSearchMode } from '@/features/players/usePlayers'
 import { Loader2 } from 'lucide-react'
 
 interface Props {
   value: string
   onChange: (phoneNumber: string) => void
   error?: string
+  searchMode?: PlayerSearchMode  // US1: Support name, mobile, or both (default: both)
 }
 
-export default function PlayerSelectCombobox({ value, onChange, error }: Props) {
+export default function PlayerSelectCombobox({ value, onChange, error, searchMode = 'both' }: Props) {
   const [searchTerm, setSearchTerm] = useState(value)
   const [isOpen, setIsOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [newAddress, setNewAddress] = useState('')
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  const { data: players = [], isLoading } = usePlayerSearch(searchTerm)
+  // US1: Enhanced search with support for name, mobile, or both
+  const { data: players = [], isLoading } = usePlayerSearch(searchTerm, { searchMode })
   const { mutateAsync: createPlayer, isPending: isCreating } = useCreatePlayer()
 
   // Handle outside click to close dropdown
@@ -56,10 +59,19 @@ export default function PlayerSelectCombobox({ value, onChange, error }: Props) 
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      <label className="block text-sm font-medium text-gray-700 mb-1">Player Phone Number</label>
+      {/* US1: Enhanced label to reflect dual search capability */}
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Player {searchMode === 'name' ? 'Name' : searchMode === 'mobile' ? 'Phone Number' : 'Name or Phone Number'}
+      </label>
       <input
         type="text"
-        placeholder="e.g. 0771234567"
+        placeholder={
+          searchMode === 'name' 
+            ? 'e.g. John Smith' 
+            : searchMode === 'mobile'
+            ? 'e.g. 0771234567'
+            : 'Search by name or phone (e.g. John or 0771234567)'
+        }
         value={searchTerm}
         className={`w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none ${error ? 'border-red-500' : 'border-gray-300'}`}
         onChange={(e) => {
@@ -88,10 +100,19 @@ export default function PlayerSelectCombobox({ value, onChange, error }: Props) 
                   className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                   onClick={() => handleSelect(p.phone_number)}
                 >
-                  <span className="font-medium text-gray-900">{p.phone_number}</span>
-                  {p.name && <span className="ml-2 text-gray-500">({p.name})</span>}
+                  {/* US1: Display both name and phone number for better identification */}
+                  <div className="font-medium text-gray-900">
+                    {p.name ? `${p.name}` : 'Unknown Player'}
+                  </div>
+                  <div className="text-xs text-gray-500">{p.phone_number}</div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {!isLoading && players.length === 0 && searchTerm.length >= 3 && (
+            <div className="p-3 text-sm text-gray-500 text-center">
+              No players found. Try different search terms or create a new player below.
             </div>
           )}
 

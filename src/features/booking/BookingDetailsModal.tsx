@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import type { Booking, BookingStatus, PaymentStatus } from './useBookings'
-import { useDeleteBooking, usePlayerDetails } from './useBookings'
-import { format } from 'date-fns'
-import { Loader2, Trash2, CheckCircle, CreditCard, Phone, MapPin } from 'lucide-react'
+import { useDeleteBooking, usePlayerDetails, useBookings } from './useBookings'
+import { format, parse, startOfDay, endOfDay } from 'date-fns'
+import { Loader2, Trash2, CheckCircle, CreditCard, Phone, MapPin, Clock, AlertCircle } from 'lucide-react'
+import { useTimeAdjustment, validateTimeAdjustment } from '@/hooks/useTimeAdjustment'
 
 interface Props {
   booking: Booking
@@ -27,12 +28,23 @@ interface Props {
  * @param isAdmin - If true, shows player details and allows interactions
  */
 export default function BookingDetailsModal({ booking, isOpen, isAdmin = false, onClose, onUpdateStatus }: Props) {
+  const bookingDate = new Date(booking.start_time)
+  const dayStart = startOfDay(bookingDate)
+  const dayEnd = endOfDay(bookingDate)
+
   const [isUpdating, setIsUpdating] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showTimeAdjustment, setShowTimeAdjustment] = useState(false)
+  const [adjustedStartTime, setAdjustedStartTime] = useState<string>(format(new Date(booking.start_time), 'HH:mm'))
+  const [adjustedEndTime, setAdjustedEndTime] = useState<string>(format(new Date(booking.end_time), 'HH:mm'))
+  const [timeValidationError, setTimeValidationError] = useState<string>('')
+  const [timeConflicts, setTimeConflicts] = useState<any[]>([])
+  const [isValidatingTime, setIsValidatingTime] = useState(false)
+
   const { mutateAsync: deleteBooking, isPending: isDeleting } = useDeleteBooking()
-  
-  // Fetch player details via FK lookup (only works for admin due to RLS policy)
   const { data: playerDetails, isLoading: isLoadingPlayer } = usePlayerDetails(booking.player_phone_number)
+  const { data: allBookings = [] } = useBookings(dayStart, dayEnd, true)
+  const { mutate: adjustTime, isPending: isAdjustingTime } = useTimeAdjustment()
 
   if (!isOpen) return null
 
@@ -61,6 +73,56 @@ export default function BookingDetailsModal({ booking, isOpen, isAdmin = false, 
     } catch (e) {
       console.error(e)
     }
+  }
+
+  const handleValidateTimeAdjustment = async () => {
+    setIsValidatingTime(true)
+    setTimeValidationError('')
+    setTimeConflicts([])
+
+    try {
+      const newStartDate = parse(adjustedStartTime, 'HH:mm', bookingDate)
+      const newEndDate = parse(adjustedEndTime, 'HH:mm', bookingDate)
+
+      const validation = await validateTimeAdjustment(
+        booking.id,
+        newStartDate,
+        newEndDate,
+        allBookings
+      )
+
+      if (!validation.isValid) {
+        setTimeValidationError(validation.errorMessage || 'Invalid time adjustment')
+        if (validation.conflicts) {
+          setTimeConflicts(validation.conflicts)
+        }
+      }
+    } catch (e) {
+      setTimeValidationError(e instanceof Error ? e.message : 'Validation failed')
+    } finally {
+      setIsValidatingTime(false)
+    }
+  }
+
+  const handleConfirmTimeAdjustment = async () => {
+    if (timeValidationError) return // Don't proceed if validation failed
+
+    const newStartDate = parse(adjustedStartTime, 'HH:mm', bookingDate)
+    const newEndDate = parse(adjustedEndTime, 'HH:mm', bookingDate)
+
+    adjustTime(
+      {
+        bookingId: booking.id,
+        startTime: newStartDate,
+        endTime: newEndDate,
+      },
+      {
+        onSuccess: () => {
+          setShowTimeAdjustment(false)
+          onClose()
+        },
+      }
+    )
   }
 
   const statusColor = {
@@ -142,6 +204,96 @@ export default function BookingDetailsModal({ booking, isOpen, isAdmin = false, 
             </p>
             <p className="text-sm text-gray-500">{format(new Date(booking.start_time), 'EEEE, MMM do yyyy')}</p>
           </div>
+
+          {/* Time Adjustment Section (Admin Only) */}
+          {!showTimeAdjustment ? (
+            <button
+              onClick={() => setShowTimeAdjustment(true)}
+              className="w-full flex items-center justify-center gap-2 border border-blue-200 text-blue-600 hover:bg-blue-50 font-medium py-2 px-3 rounded-lg text-sm transition-colors"
+            >
+              <Clock size={15} /> Adjust Time
+            </button>
+          ) : (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Adjust Booking Time</p>
+              
+              <div className="space-y-2">
+                <label className="block text-xs text-gray-600 font-medium">Start Time</label>
+                <input
+                  type="time"
+                  value={adjustedStartTime}
+                  onChange={(e) => {
+                    setAdjustedStartTime(e.target.value)
+                    setTimeValidationError('')
+                    setTimeConflicts([])
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs text-gray-600 font-medium">End Time</label>
+                <input
+                  type="time"
+                  value={adjustedEndTime}
+                  onChange={(e) => {
+                    setAdjustedEndTime(e.target.value)
+                    setTimeValidationError('')
+                    setTimeConflicts([])
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Validation Error */}
+              {timeValidationError && (
+                <div className="bg-red-100 border border-red-300 rounded-lg p-2 flex items-start gap-2">
+                  <AlertCircle size={14} className="text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-red-600 font-medium">{timeValidationError}</p>
+                    {timeConflicts.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {timeConflicts.map((conflict, idx) => (
+                          <p key={idx} className="text-xs text-red-600">
+                            • {conflict.playerName || 'Player'}: {format(new Date(conflict.startTime), 'h:mm a')} - {format(new Date(conflict.endTime), 'h:mm a')}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    setShowTimeAdjustment(false)
+                    setTimeValidationError('')
+                    setTimeConflicts([])
+                  }}
+                  className="flex-1 py-1.5 text-sm border rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-60"
+                  disabled={isValidatingTime}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleValidateTimeAdjustment}
+                  className="flex-1 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                  disabled={isValidatingTime}
+                >
+                  {isValidatingTime ? <Loader2 size={14} className="inline animate-spin mr-1" /> : 'Check'}
+                </button>
+                <button
+                  onClick={handleConfirmTimeAdjustment}
+                  className="flex-1 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60"
+                  disabled={timeValidationError !== '' || isAdjustingTime}
+                >
+                  {isAdjustingTime ? <Loader2 size={14} className="inline animate-spin mr-1" /> : 'Save'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Financials */}
           <div className="bg-gray-50 rounded-lg p-4">
