@@ -97,7 +97,7 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-lg bg-white shadow-xl overflow-hidden flex flex-col">
+      <div className="w-full max-w-lg rounded-lg bg-white shadow-xl overflow-hidden flex flex-col h-[90vh] md:h-auto">
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-xl font-bold text-gray-800">New Booking</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -105,7 +105,9 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 flex-1 overflow-y-auto">
+        {/* US4: Scrollable form body with padding for sticky button on mobile */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
+          <div className="p-6 pb-24 md:pb-6">
           
           <div className="mb-6">
             <Controller
@@ -116,6 +118,7 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
                   value={field.value}
                   onChange={field.onChange}
                   error={errors.player_phone_number?.message}
+                  searchMode="both"
                 />
               )}
             />
@@ -207,14 +210,16 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
               </label>
             </div>
           </div>
-
-          <div className="flex items-center justify-end gap-3 mt-auto pt-4 border-t">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="flex items-center justify-center min-w-[120px] px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Booking'}
-            </button>
           </div>
         </form>
+
+        {/* US4: Sticky footer buttons (always visible on mobile, positioned at bottom) */}
+        <div className="sticky bottom-0 md:static border-t bg-white p-6 flex items-center justify-end gap-3 md:border-t md:bg-transparent">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+          <button type="submit" disabled={isSubmitting} onClick={handleSubmit(onSubmit)} className="flex items-center justify-center min-w-[120px] px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md h-10 md:h-auto">
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Booking'}
+          </button>
+        </div>
       </div>
     </div>
   )

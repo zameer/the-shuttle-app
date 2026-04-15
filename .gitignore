@@ -9,6 +9,8 @@ lerna-debug.log*
 
 node_modules
 dist
+build
+coverage
 dist-ssr
 *.local
 
@@ -26,3 +28,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env*
+Thumbs.db
+*.tmp

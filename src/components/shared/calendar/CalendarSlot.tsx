@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import StatusBadge from '@/components/shared/StatusBadge'
+import { Badge } from '@/components/ui/badge'
 import type { Booking } from '@/features/booking/useBookings'
 
 interface CalendarSlotProps {
@@ -67,27 +68,43 @@ export default function CalendarSlot({
     <div
       onClick={handleClick}
       className={cn(
-        'text-xs px-1.5 py-0.5 rounded-sm truncate transition-colors',
+        'min-h-[44px] rounded-sm px-2 py-2 text-xs sm:text-sm md:px-3 md:py-3 lg:px-4 lg:py-4 truncate transition-colors',
         readOnly ? 'cursor-default' : 'cursor-pointer',
         !readOnly && colorClass.split(' ').filter(c => !c.startsWith('hover:')).join(' '),
         !readOnly && colorClass,
         className
       )}
     >
-      <div className="flex items-center gap-1 flex-col md:flex-row">
+      <div className="flex items-start gap-1.5 flex-col md:flex-row md:items-center">
         {/* Time */}
         <span className="font-semibold whitespace-nowrap">
           {format(new Date(booking.start_time), 'HH:mm')}
         </span>
 
         {/* Status + Name (if admin) */}
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-1">
           <StatusBadge
             status={booking.status}
             playerName={isAdmin ? booking.player_name : undefined}
             isAdmin={isAdmin}
             variant="inline"
           />
+          
+          {/* US3: Payment status badge (admin only) */}
+          {isAdmin && booking.payment_status && (
+            <Badge
+              variant={
+                booking.payment_status === 'PAID'
+                  ? 'default'
+                  : booking.payment_status === 'PENDING'
+                  ? 'secondary'
+                  : 'destructive'
+              }
+              className="text-[10px] px-1.5 py-0"
+            >
+              {booking.payment_status === 'PAID' ? '✓ Paid' : 'Pending'}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -98,14 +115,32 @@ export default function CalendarSlot({
             {booking.player_name}
           </div>
         )}
-        <div className="text-xs font-semibold">
-          {booking.status === 'CONFIRMED'
-            ? 'Reserved'
-            : booking.status === 'PENDING'
-            ? 'Pending'
-            : booking.status === 'UNAVAILABLE'
-            ? 'Unavailable'
-            : 'Open'}
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="text-xs font-semibold">
+            {booking.status === 'CONFIRMED'
+              ? 'Reserved'
+              : booking.status === 'PENDING'
+              ? 'Pending'
+              : booking.status === 'UNAVAILABLE'
+              ? 'Unavailable'
+              : 'Open'}
+          </span>
+          
+          {/* US3: Payment status badge (admin only, mobile) */}
+          {isAdmin && booking.payment_status && (
+            <Badge
+              variant={
+                booking.payment_status === 'PAID'
+                  ? 'default'
+                  : booking.payment_status === 'PENDING'
+                  ? 'secondary'
+                  : 'destructive'
+              }
+              className="text-[10px] px-1.5 py-0"
+            >
+              {booking.payment_status === 'PAID' ? '✓ Paid' : 'Pending'}
+            </Badge>
+          )}
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ export default function PublicLayout() {
         <p className="text-sm font-light opacity-90 mt-1">Badminton Court Availability</p>
       </header>
       
-      <main className="flex-1 w-full max-w-md p-4">
+      <main className="flex-1 w-full max-w-[1400px] px-2 py-4 sm:px-4 lg:px-6">
         <Outlet />
       </main>
       
