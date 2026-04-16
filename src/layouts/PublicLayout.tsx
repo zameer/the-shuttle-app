@@ -1,11 +1,19 @@
+import { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { getDayOfYear } from "date-fns";
+import { ClipboardList } from "lucide-react";
 import QuoteArea from "@/features/players/header/QuoteArea";
 import BellNotification from "@/features/players/header/BellNotification";
 import { QUOTES, ANNOUNCEMENTS, SPONSORS } from "@/features/players/header/types";
 import SponsorsSection from "@/features/players/header/SponsorsSection";
+import { useCourtRules } from "@/features/players/rules/useCourtRules";
+import RulesBanner from "@/features/players/rules/RulesBanner";
+import RulesModal from "@/features/players/rules/RulesModal";
 
 export default function PublicLayout() {
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const { data: rules = [] } = useCourtRules()
+
   const selectedQuote = QUOTES.length > 0
     ? QUOTES[getDayOfYear(new Date()) % QUOTES.length]
     : { text: '' }
@@ -21,7 +29,16 @@ export default function PublicLayout() {
           <div className="flex-1 min-w-0">
             <QuoteArea quote={selectedQuote} />
           </div>
-          <div className="shrink-0 self-start pt-1">
+          <div className="shrink-0 self-start pt-1 flex items-center gap-1">
+            {rules.length > 0 && (
+              <button
+                onClick={() => setRulesOpen(true)}
+                aria-label="View court rules"
+                className="p-2 rounded-full hover:bg-blue-700 transition-colors"
+              >
+                <ClipboardList className="w-5 h-5" />
+              </button>
+            )}
             <BellNotification announcements={ANNOUNCEMENTS} />
           </div>
         </div>
@@ -29,9 +46,13 @@ export default function PublicLayout() {
 
       <SponsorsSection sponsors={SPONSORS} />
 
+      <RulesBanner rules={rules} onViewFullRules={() => setRulesOpen(true)} />
+
       <main className="flex-1 w-full max-w-[1400px] px-2 py-4 sm:px-4 lg:px-6">
         <Outlet />
       </main>
+
+      <RulesModal open={rulesOpen} onClose={() => setRulesOpen(false)} rules={rules} />
       
       <footer className="w-full py-6 text-center text-gray-400 text-xs mt-auto space-y-1">
         <div>
