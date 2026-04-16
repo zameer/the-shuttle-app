@@ -49,7 +49,8 @@ export const QUOTES: Quote[] = [
     text: 'Whoever follows a path in pursuit of knowledge, Allah will make a path to Paradise easy for him.',
   },
   {
-    text: 'Train hard, play harder — the court rewards the committed.',
+    text: 'The best day on which the sun has risen is Friday.',
+    author: 'Prophet Muhammad ﷺ',
   },
   {
     text: 'My Lord, increase me in knowledge.',
