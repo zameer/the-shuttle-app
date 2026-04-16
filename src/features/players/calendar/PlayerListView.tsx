@@ -66,7 +66,7 @@ export default function PlayerListView({
 
         return (
           <li
-            key={row.slotStart.toISOString()}
+            key={`${row.type}-${row.slotStart.toISOString()}-${row.slotEnd.toISOString()}`}
             role="listitem"
             tabIndex={0}
             aria-disabled={!row.actionable}

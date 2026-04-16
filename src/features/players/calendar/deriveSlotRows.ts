@@ -1,9 +1,11 @@
-import { setHours, setMinutes, setSeconds, setMilliseconds, addHours, parseISO } from 'date-fns'
+import { addMinutes, parseISO, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
 
 export interface SlotRowRepresentation {
+  type: 'booking' | 'available'
   slotStart: Date
   slotEnd: Date
+  durationMinutes: number
   status: 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE'
   booking?: Booking
   actionable: boolean
@@ -11,38 +13,99 @@ export interface SlotRowRepresentation {
 
 const SCHEDULE_START_HOUR = 6
 const SCHEDULE_END_HOUR = 22
+const SLOT_STEP_MINUTES = 60
 
 function dayStart(date: Date, hour: number): Date {
   return setMilliseconds(setSeconds(setMinutes(setHours(date, hour), 0), 0), 0)
 }
 
 /**
- * Derives hourly slot rows for a given date from existing booking data.
+ * Derives exact chronological slot rows for a given date from existing booking data.
  * Covers the visible schedule window (06:00–22:00).
  * No API calls — pure client-side derivation from the existing booking query.
  */
 export function deriveSlotRows(date: Date, bookings: Booking[]): SlotRowRepresentation[] {
+  const scheduleStart = dayStart(date, SCHEDULE_START_HOUR)
+  const scheduleEnd = dayStart(date, SCHEDULE_END_HOUR)
   const rows: SlotRowRepresentation[] = []
 
-  for (let hour = SCHEDULE_START_HOUR; hour < SCHEDULE_END_HOUR; hour++) {
-    const slotStart = dayStart(date, hour)
-    const slotEnd = addHours(slotStart, 1)
-
-    const match = bookings.find((b) => {
-      const bStart = parseISO(b.start_time)
-      const bEnd = parseISO(b.end_time)
-      // Overlap: booking starts before slot ends AND ends after slot starts
-      return bStart < slotEnd && bEnd > slotStart
+  const dayBookings = bookings
+    .filter((booking) => {
+      const bookingStart = parseISO(booking.start_time)
+      const bookingEnd = parseISO(booking.end_time)
+      return bookingStart < scheduleEnd && bookingEnd > scheduleStart
     })
+    .sort((left, right) => parseISO(left.start_time).getTime() - parseISO(right.start_time).getTime())
 
-    const status = match ? (match.status as SlotRowRepresentation['status']) : 'AVAILABLE'
+  let cursor = scheduleStart
+
+  for (const booking of dayBookings) {
+    const bookingStart = parseISO(booking.start_time)
+    const bookingEnd = parseISO(booking.end_time)
+    const effectiveStart = bookingStart < scheduleStart ? scheduleStart : bookingStart
+    const effectiveEnd = bookingEnd > scheduleEnd ? scheduleEnd : bookingEnd
+
+    while (addMinutes(cursor, SLOT_STEP_MINUTES) <= effectiveStart) {
+      const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
+      rows.push({
+        type: 'available',
+        slotStart: cursor,
+        slotEnd,
+        durationMinutes: SLOT_STEP_MINUTES,
+        status: 'AVAILABLE',
+        actionable: true,
+      })
+      cursor = slotEnd
+    }
+
+    if (cursor < effectiveStart) {
+      rows.push({
+        type: 'available',
+        slotStart: cursor,
+        slotEnd: effectiveStart,
+        durationMinutes: (effectiveStart.getTime() - cursor.getTime()) / 60000,
+        status: 'AVAILABLE',
+        actionable: true,
+      })
+      cursor = effectiveStart
+    }
 
     rows.push({
-      slotStart,
+      type: 'booking',
+      slotStart: effectiveStart,
+      slotEnd: effectiveEnd,
+      durationMinutes: (effectiveEnd.getTime() - effectiveStart.getTime()) / 60000,
+      status: booking.status,
+      booking,
+      actionable: booking.status !== 'UNAVAILABLE',
+    })
+
+    if (effectiveEnd > cursor) {
+      cursor = effectiveEnd
+    }
+  }
+
+  while (addMinutes(cursor, SLOT_STEP_MINUTES) <= scheduleEnd) {
+    const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
+    rows.push({
+      type: 'available',
+      slotStart: cursor,
       slotEnd,
-      status,
-      booking: match,
-      actionable: status !== 'UNAVAILABLE',
+      durationMinutes: SLOT_STEP_MINUTES,
+      status: 'AVAILABLE',
+      actionable: true,
+    })
+    cursor = slotEnd
+  }
+
+  if (cursor < scheduleEnd) {
+    rows.push({
+      type: 'available',
+      slotStart: cursor,
+      slotEnd: scheduleEnd,
+      durationMinutes: (scheduleEnd.getTime() - cursor.getTime()) / 60000,
+      status: 'AVAILABLE',
+      actionable: true,
     })
   }
 
