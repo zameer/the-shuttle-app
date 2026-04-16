@@ -42,23 +42,24 @@ export interface Sponsor {
 
 export const QUOTES: Quote[] = [
   {
-    text: 'The shuttle doesn\'t wait for anyone. Neither does the court.',
-    author: 'Coach Amal',
+    text: 'Eat and drink, but do not be excessive.',
+    author: 'Qur\’an 7:31',
   },
   {
-    text: 'Every rally is a new beginning.',
+    text: 'Whoever follows a path in pursuit of knowledge, Allah will make a path to Paradise easy for him.',
   },
   {
     text: 'Train hard, play harder — the court rewards the committed.',
   },
   {
-    text: 'Consistency is the hallmark of a champion.',
+    text: 'My Lord, increase me in knowledge.',
+    author: 'Qur\’an 20:114',
   },
   {
-    text: 'One game at a time. One point at a time.',
+    text: 'Your body has a right over you.',
   },
   {
-    text: 'The best shot is the one you prepared for.',
+    text: 'Seeking knowledge is an obligation upon everyone.',
   },
   {
     text: 'Footwork, focus, finesse — in that order.',
