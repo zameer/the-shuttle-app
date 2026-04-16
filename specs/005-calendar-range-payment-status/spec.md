@@ -1,8 +1,8 @@
 # Feature Specification: Calendar Range and Payment Status
 
-**Feature Branch**: `004-responsive-calendar`  
+**Feature Branch**: `005-calendar-range-payment-status`  
 **Created**: April 15, 2026  
-**Status**: Draft  
+**Status**: Ready for Validation  
 **Input**: User description: "01. Calander dashboard now limited to one day, defalut show without day filtering, optionally provide an option to select a date range and filter 02. Admin Calander, show payment status"
 
 ## User Scenarios & Testing *(mandatory)*

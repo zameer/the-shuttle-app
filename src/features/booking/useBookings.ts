@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { endOfDay, endOfWeek, startOfDay, startOfWeek } from 'date-fns'
 import { supabase } from '@/services/supabase'
+import { normalizePaymentStatus } from '@/features/booking/paymentStatus'
 
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE'
-export type PaymentStatus = 'PENDING' | 'PAID'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'UNPAID' | 'UNKNOWN'
 
 export interface Booking {
   id: string
@@ -14,6 +16,21 @@ export interface Booking {
   total_price: number | null
   payment_status: PaymentStatus | null
   player_name?: string | null  // Optional: populated when fetchPlayerNames is true
+}
+
+function getEffectiveQueryRange(startDate?: Date | null, endDate?: Date | null) {
+  const fallbackStart = startOfWeek(new Date())
+  const fallbackEnd = endOfWeek(new Date())
+
+  return {
+    start: startOfDay(startDate ?? fallbackStart),
+    end: endOfDay(endDate ?? fallbackEnd),
+  }
+}
+
+type BookingRow = Omit<Booking, 'player_name' | 'payment_status'> & {
+  payment_status: string | null
+  players?: { name: string | null } | null
 }
 
 export interface PlayerDetails {
@@ -42,12 +59,14 @@ export interface PlayerDetails {
  *   - Admin can read all bookings with player names
  *   - Public users see bookings filtered by view (status only)
  */
-export function useBookings(startDate: Date, endDate: Date, fetchPlayerNames: boolean = false) {
+export function useBookings(startDate?: Date | null, endDate?: Date | null, fetchPlayerNames: boolean = false) {
+  const { start, end } = getEffectiveQueryRange(startDate, endDate)
+
   return useQuery({
     queryKey: [
       'bookings',
-      startDate.toISOString().split('T')[0],
-      endDate.toISOString().split('T')[0],
+      start.toISOString().split('T')[0],
+      end.toISOString().split('T')[0],
       fetchPlayerNames ? 'with-names' : 'status-only'
     ],
     queryFn: async (): Promise<Booking[]> => {
@@ -59,23 +78,27 @@ export function useBookings(startDate: Date, endDate: Date, fetchPlayerNames: bo
       const { data, error } = await supabase
         .from('bookings')
         .select(selectClause)
-        .lte('start_time', endDate.toISOString())
-        .gte('end_time', startDate.toISOString())
+        .lte('start_time', end.toISOString())
+        .gte('end_time', start.toISOString())
         .order('start_time', { ascending: true })
 
       if (error) throw new Error(error.message)
       
+      const rows = (data ?? []) as BookingRow[]
+
       // Transform response: if FK was fetched, extract player name from nested object
-      if (fetchPlayerNames && data) {
-        return data.map((booking: any) => ({
+      if (fetchPlayerNames) {
+        return rows.map((booking) => ({
           ...booking,
-          player_name: booking.players?.name || null,
-          // Remove the nested players object to keep interface clean
-          players: undefined,
+          payment_status: normalizePaymentStatus(booking.payment_status),
+          player_name: booking.players?.name ?? null,
         }))
       }
-      
-      return data as Booking[]
+
+      return rows.map((booking) => ({
+        ...booking,
+        payment_status: normalizePaymentStatus(booking.payment_status),
+      })) as Booking[]
     },
   })
 }

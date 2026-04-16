@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react'
 import CalendarContainer from '@/components/shared/calendar/CalendarContainer'
+import DateRangeFilter from '@/components/shared/calendar/DateRangeFilter'
+import { getCalendarViewRange } from '@/components/shared/calendar/range'
 import type { CalendarView } from '@/components/shared/calendar/CalendarContainer'
 import BookingDetailsModal from '@/features/booking/BookingDetailsModal'
 import BookingForm from '@/features/booking/BookingForm'
 import { useBookings, useUpdateBookingStatus } from '@/features/booking/useBookings'
 import type { Booking } from '@/features/booking/useBookings'
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import { useQueryClient } from '@tanstack/react-query'
+import { useDateRangeFilter } from '@/hooks/useDateRangeFilter'
 
 /**
  * AdminCalendarPage - Admin-only calendar view
@@ -20,16 +22,14 @@ import { useQueryClient } from '@tanstack/react-query'
 export default function AdminCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<CalendarView>('week')
+  const dateRangeFilter = useDateRangeFilter()
 
-  const { startDate, endDate } = useMemo(() => {
-    if (view === 'month') {
-      return { startDate: startOfMonth(currentDate), endDate: endOfMonth(currentDate) }
-    }
-    return { startDate: startOfWeek(currentDate), endDate: endOfWeek(currentDate) }
-  }, [currentDate, view])
+  const calendarRange = useMemo(() => getCalendarViewRange(currentDate, view), [currentDate, view])
+  const queryStartDate = dateRangeFilter.appliedRange?.startDate ?? calendarRange.startDate
+  const queryEndDate = dateRangeFilter.appliedRange?.endDate ?? calendarRange.endDate
 
   // Fetch bookings WITH player names for admin view
-  const { data: bookings = [], isLoading } = useBookings(startDate, endDate, true)
+  const { data: bookings = [], isLoading } = useBookings(queryStartDate, queryEndDate, true)
   const { mutateAsync: updateStatus } = useUpdateBookingStatus()
   const queryClient = useQueryClient()
 
@@ -47,21 +47,52 @@ export default function AdminCalendarPage() {
     }
   }
 
+  const handleApplyRange = () => {
+    const applied = dateRangeFilter.applyRange()
+    if (applied) {
+      setCurrentDate(applied.startDate)
+    }
+  }
+
+  const handleClearRange = () => {
+    dateRangeFilter.clearRange()
+  }
+
   return (
-    <div>
+    <div className="space-y-3">
+      <DateRangeFilter
+        startValue={dateRangeFilter.startInput}
+        endValue={dateRangeFilter.endInput}
+        onStartChange={dateRangeFilter.setStartInput}
+        onEndChange={dateRangeFilter.setEndInput}
+        canApply={dateRangeFilter.canApply}
+        isActive={dateRangeFilter.isActive}
+        error={dateRangeFilter.validationError}
+        onApply={handleApplyRange}
+        onClear={handleClearRange}
+      />
+
       {isLoading ? (
         <div className="animate-pulse bg-gray-200 h-[600px] w-full rounded-lg"></div>
       ) : (
-        <CalendarContainer 
-          currentDate={currentDate}
-          view={view}
-          onDateChange={setCurrentDate}
-          onViewChange={setView}
-          bookings={bookings} 
-          onSlotClick={handleSlotClick}
-          isAdmin={true}
-          readOnly={false}
-        />
+        <>
+          {dateRangeFilter.isActive && bookings.length === 0 ? (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              No bookings found in the selected date range. Try expanding the range or clear filters.
+            </div>
+          ) : null}
+
+          <CalendarContainer 
+            currentDate={currentDate}
+            view={view}
+            onDateChange={setCurrentDate}
+            onViewChange={setView}
+            bookings={bookings} 
+            onSlotClick={handleSlotClick}
+            isAdmin={true}
+            readOnly={false}
+          />
+        </>
       )}
 
       {activeBooking && (

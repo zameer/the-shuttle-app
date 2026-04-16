@@ -4,6 +4,7 @@ import { useDeleteBooking, usePlayerDetails, useBookings } from './useBookings'
 import { format, parse, startOfDay, endOfDay } from 'date-fns'
 import { Loader2, Trash2, CheckCircle, CreditCard, Phone, MapPin, Clock, AlertCircle } from 'lucide-react'
 import { useTimeAdjustment, validateTimeAdjustment } from '@/hooks/useTimeAdjustment'
+import { getPaymentStatusLabel, getPaymentStatusPillClassName, normalizePaymentStatus } from '@/features/booking/paymentStatus'
 
 interface Props {
   booking: Booking
@@ -130,6 +131,9 @@ export default function BookingDetailsModal({ booking, isOpen, isAdmin = false, 
     PENDING: 'bg-yellow-100 text-yellow-800',
     UNAVAILABLE: 'bg-gray-100 text-gray-600',
   }[booking.status] ?? 'bg-gray-100 text-gray-800'
+
+  const paymentStatus = normalizePaymentStatus(booking.payment_status)
+  const paymentLabel = getPaymentStatusLabel(paymentStatus)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -303,10 +307,8 @@ export default function BookingDetailsModal({ booking, isOpen, isAdmin = false, 
               <span className="font-bold text-gray-900">{booking.total_price ?? 0} LKR</span>
             </div>
             <div className="mt-2">
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                booking.payment_status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-              }`}>
-                Payment: {booking.payment_status ?? 'PENDING'}
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${getPaymentStatusPillClassName(paymentStatus)}`}>
+                Payment: {paymentLabel}
               </span>
             </div>
           </div>

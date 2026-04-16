@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import StatusBadge from '@/components/shared/StatusBadge'
 import { Badge } from '@/components/ui/badge'
 import type { Booking } from '@/features/booking/useBookings'
+import { getPaymentStatusBadgeVariant, getPaymentStatusLabel, normalizePaymentStatus } from '@/features/booking/paymentStatus'
 
 interface CalendarSlotProps {
   booking: Booking
@@ -49,6 +50,9 @@ export default function CalendarSlot({
   onClick,
   className,
 }: CalendarSlotProps) {
+  const paymentStatus = normalizePaymentStatus(booking.payment_status)
+  const paymentLabel = getPaymentStatusLabel(paymentStatus)
+
   const handleClick = () => {
     // Don't click unavailable slots in read-only mode
     if (readOnly && booking.status === 'UNAVAILABLE') return
@@ -91,18 +95,12 @@ export default function CalendarSlot({
           />
           
           {/* US3: Payment status badge (admin only) */}
-          {isAdmin && booking.payment_status && (
+          {isAdmin && (
             <Badge
-              variant={
-                booking.payment_status === 'PAID'
-                  ? 'default'
-                  : booking.payment_status === 'PENDING'
-                  ? 'secondary'
-                  : 'destructive'
-              }
+              variant={getPaymentStatusBadgeVariant(paymentStatus)}
               className="text-[10px] px-1.5 py-0"
             >
-              {booking.payment_status === 'PAID' ? '✓ Paid' : 'Pending'}
+              {paymentLabel}
             </Badge>
           )}
         </div>
@@ -127,18 +125,12 @@ export default function CalendarSlot({
           </span>
           
           {/* US3: Payment status badge (admin only, mobile) */}
-          {isAdmin && booking.payment_status && (
+          {isAdmin && (
             <Badge
-              variant={
-                booking.payment_status === 'PAID'
-                  ? 'default'
-                  : booking.payment_status === 'PENDING'
-                  ? 'secondary'
-                  : 'destructive'
-              }
+              variant={getPaymentStatusBadgeVariant(paymentStatus)}
               className="text-[10px] px-1.5 py-0"
             >
-              {booking.payment_status === 'PAID' ? '✓ Paid' : 'Pending'}
+              {paymentLabel}
             </Badge>
           )}
         </div>

@@ -3,6 +3,7 @@ import { format, startOfWeek, addDays, startOfToday, isSameDay, setHours, startO
 import { cn } from "@/lib/utils";
 import type { Booking } from "@/features/booking/useBookings";
 import { useCourtSettings, useRecurringBlocks } from "@/features/admin/useCourtSettings";
+import { getPaymentStatusLabel, getPaymentStatusPillClassName, normalizePaymentStatus } from "@/features/booking/paymentStatus";
 
 interface WeekViewProps {
   currentDate: Date;
@@ -157,6 +158,8 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
                       const statusLabel = booking.status === "CONFIRMED" ? "Reserved" :
                                          booking.status === "PENDING" ? "Pending" :
                                          booking.status === "UNAVAILABLE" ? "Unavailable" : "Open";
+                      const paymentStatus = normalizePaymentStatus(booking.payment_status)
+                      const paymentLabel = getPaymentStatusLabel(paymentStatus)
 
                       return (
                         <div
@@ -181,6 +184,11 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
                               </div>
                             )}
                             <div className="text-[10px] font-semibold">{statusLabel}</div>
+                            {isAdmin && (
+                              <div className={`inline-flex w-fit rounded-full border px-1 py-0 text-[9px] font-semibold ${getPaymentStatusPillClassName(paymentStatus)}`}>
+                                {paymentLabel}
+                              </div>
+                            )}
                             <div className="text-[9px] opacity-75 leading-none">
                               {format(bStart, "HH:mm")} – {format(bEnd, "HH:mm")}
                             </div>
@@ -195,6 +203,11 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
                             )}
                             {!isAdmin && (
                               <div className="text-[10px] font-semibold">{statusLabel}</div>
+                            )}
+                            {isAdmin && (
+                              <div className={`inline-flex w-fit rounded-full border px-1 py-0 text-[9px] font-semibold mt-0.5 ${getPaymentStatusPillClassName(paymentStatus)}`}>
+                                {paymentLabel}
+                              </div>
                             )}
                             <div className="text-[10px] opacity-80 leading-none mt-0.5">
                               {format(bStart, "HH:mm")} – {format(bEnd, "HH:mm")}
