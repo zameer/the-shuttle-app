@@ -13,6 +13,11 @@ Auto-generated from all feature plans. Last updated: 2026-04-16
 - Supabase PostgreSQL — `dashboard_metrics` view (read-only aggregate query; no new tables or migrations) (007-header-quote-dashboard-all)
 - TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, Supabase 2.103.0, lucide-react 1.8, react-markdown (NEW — to be installed) (008-player-rules-modal)
 - Supabase PostgreSQL — new `court_rules` table; new migration required (008-player-rules-modal)
+- TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8 (009-mobile-calendar-toggle)
+- Supabase PostgreSQL (existing read-only booking/rules data; no schema change) (009-mobile-calendar-toggle)
+- TypeScript 6.0.2 + React 19.2.4 + Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, lucide-react 1.8, date-fns 4.1.0 (009-mobile-calendar-toggle)
+- N/A — existing Supabase read-only booking data; no schema change (009-mobile-calendar-toggle)
+- TypeScript 6.0.2 + React 19.2.4 + Tailwind CSS 3.4.17, shadcn/ui, date-fns 4.1.0, lucide-react 1.8 (010-list-date-picker)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -33,9 +38,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
-- 008-player-rules-modal: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, Supabase 2.103.0, lucide-react 1.8, react-markdown (NEW — to be installed)
-- 007-header-quote-dashboard-all: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, Supabase 2.103.0, date-fns 4.1.0
-- main: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8, React Query 5.99.0
+- 010-list-date-picker: Added TypeScript 6.0.2 + React 19.2.4 + Tailwind CSS 3.4.17, shadcn/ui, date-fns 4.1.0, lucide-react 1.8
+- 009-mobile-calendar-toggle: Added TypeScript 6.0.2 + React 19.2.4 + Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, lucide-react 1.8, date-fns 4.1.0
+- 009-mobile-calendar-toggle: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8
 
 
 <!-- MANUAL ADDITIONS START -->

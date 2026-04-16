@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react'
 import { RULE_ICON_MAP, DEFAULT_RULE_ICON } from './ruleIcons'
 import type { CourtRule } from './useCourtRules'
 
@@ -20,7 +19,7 @@ export default function RulesBanner({ rules, onViewFullRules }: RulesBannerProps
         <p className="text-xs font-bold text-yellow-800 uppercase tracking-wide mb-2">
           ⚠ Important — Please Follow the Rules
         </p>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2">
           {rules.map((rule) => {
             const Icon = RULE_ICON_MAP[rule.icon] ?? DEFAULT_RULE_ICON
             return (
@@ -35,12 +34,6 @@ export default function RulesBanner({ rules, onViewFullRules }: RulesBannerProps
             )
           })}
         </div>
-        <button
-          onClick={onViewFullRules}
-          className="flex items-center gap-1 text-xs font-semibold text-yellow-700 hover:text-yellow-900 transition-colors"
-        >
-          View Full Rules <ChevronRight className="w-3.5 h-3.5" />
-        </button>
       </div>
     </section>
   )
