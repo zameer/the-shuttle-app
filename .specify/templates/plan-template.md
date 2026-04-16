@@ -31,7 +31,22 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify all five principles before beginning implementation:
+
+- [ ] **I. Spec-First**: `specs/###-feature-name/spec.md` exists with prioritized user stories and
+  acceptance scenarios. No implementation task exists without a parent user story.
+- [ ] **II. Type Safety**: Plan does not introduce `any` types. All boundary data identified for
+  Zod validation. Typed interfaces planned for all new data contracts.
+- [ ] **III. Component Reusability**: New UI is built on shadcn/ui primitives. Shared components
+  placed under `src/components/shared/`; feature components under `src/features/`. No business
+  logic embedded in UI components.
+- [ ] **IV. Data Integrity & Security**: RLS policies documented in data-model.md for any new
+  tables. Admin routes listed for router-level guard. Price/payment logic in service/hook layer.
+- [ ] **V. Responsive Design**: Breakpoints (≥375 px, ≥768 px, ≥1280 px) addressed in contracts.
+  Calendar or list views degrade gracefully on mobile.
+
+If any gate cannot be satisfied, document an exception under "Constitution Exceptions" in this
+plan before proceeding.
 
 ## Project Structure
 

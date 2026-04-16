@@ -1,28 +1,15 @@
-import { useState } from 'react'
-import { useDashboardMetrics } from '@/features/dashboard/useDashboardMetrics'
-import { format, subDays, addDays } from 'date-fns'
+import { useAllTimeMetrics } from '@/features/dashboard/useAllTimeMetrics'
 import { Loader2, TrendingUp, AlertCircle, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react'
 
 export default function AdminDashboardPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  
-  // Normalize string for SQL match (YYYY-MM-DD local time equivalent format safely)
-  const dateStr = format(selectedDate, 'yyyy-MM-dd')
-  
-  const { data: metrics, isLoading } = useDashboardMetrics(dateStr)
+  const { data: metrics, isLoading } = useAllTimeMetrics()
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Financial & Operations Dashboard</h2>
-          <p className="text-gray-500">Actionable intelligence for court utilization.</p>
-        </div>
-        
-        <div className="flex items-center gap-2 bg-white rounded-lg border p-1 shadow-sm">
-          <button onClick={() => setSelectedDate(prev => subDays(prev, 1))} className="px-3 py-1 hover:bg-gray-100 rounded text-sm">&larr; Prev</button>
-          <span className="font-semibold px-4 text-gray-800">{format(selectedDate, 'MMM do, yyyy')}</span>
-          <button onClick={() => setSelectedDate(prev => addDays(prev, 1))} className="px-3 py-1 hover:bg-gray-100 rounded text-sm">Next &rarr;</button>
+          <p className="text-gray-500">Cumulative totals across all booking days.</p>
         </div>
       </div>
 
