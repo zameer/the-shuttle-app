@@ -1,5 +1,6 @@
 import { addMinutes, isBefore, parseISO, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
+import { normalizePaymentStatus, type NormalizedPaymentStatus } from '@/features/booking/paymentStatus'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,6 +16,8 @@ export interface AdminListRow {
   status: AdminListRowStatus
   booking?: Booking
   playerName?: string | null
+  /** Normalized payment status — only populated for type === 'booking' rows (US3 016). */
+  paymentStatus?: NormalizedPaymentStatus
   actionable: boolean
 }
 
@@ -34,8 +37,8 @@ function toScheduleStart(date: Date): Date {
   return setMilliseconds(setSeconds(setMinutes(setHours(date, SCHEDULE_START_HOUR), 0), 0), 0)
 }
 
-function toScheduleEnd(date: Date): Date {
-  return setMilliseconds(setSeconds(setMinutes(setHours(date, SCHEDULE_END_HOUR), 0), 0), 0)
+function toScheduleHour(date: Date, hour: number): Date {
+  return setMilliseconds(setSeconds(setMinutes(setHours(date, hour), 0), 0), 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -44,14 +47,21 @@ function toScheduleEnd(date: Date): Date {
 
 /**
  * Derives an ordered list of AdminListRow entries covering the schedule window
- * (06:00–22:00) for a given date.
+ * (SCHEDULE_START_HOUR–scheduleEndHour) for a given date.
  *
- * - One merged booking row per booking record (exact start → end)
- * - 30-minute available-slot rows fill all unbooked intervals in the window
+ * - One merged booking row per booking record (exact start → end, unclamped)
+ * - 60-minute available-slot rows fill all unbooked intervals in the window
+ *
+ * @param scheduleEndHour - Court close hour (default: SCHEDULE_END_HOUR). Pass
+ *   Math.ceil(timeStrToHours(settings.court_close_time)) to align with court_settings.
  */
-export function deriveAdminListRows(date: Date, bookings: Booking[]): AdminListRow[] {
+export function deriveAdminListRows(
+  date: Date,
+  bookings: Booking[],
+  scheduleEndHour: number = SCHEDULE_END_HOUR,
+): AdminListRow[] {
   const scheduleStart = toScheduleStart(date)
-  const scheduleEnd = toScheduleEnd(date)
+  const scheduleEnd = toScheduleHour(date, scheduleEndHour)
   const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()))
 
   // Filter to bookings that overlap the schedule window and sort ascending
@@ -70,9 +80,11 @@ export function deriveAdminListRows(date: Date, bookings: Booking[]): AdminListR
     const bStart = parseISO(booking.start_time)
     const bEnd = parseISO(booking.end_time)
 
-    // Clamp to schedule window
+    // Clamp start to schedule window start (early bookings begin at 06:00 display start).
+    // Do NOT clamp end: bookings that extend beyond the schedule window must remain
+    // fully visible to match calendar view behaviour (US2 016).
     const effectiveBStart = bStart < scheduleStart ? scheduleStart : bStart
-    const effectiveBEnd = bEnd > scheduleEnd ? scheduleEnd : bEnd
+    const effectiveBEnd = bEnd
 
     // Fill 60-min available rows between cursor and booking start
     while (addMinutes(cursor, SLOT_STEP_MINUTES) <= effectiveBStart) {
@@ -114,6 +126,7 @@ export function deriveAdminListRows(date: Date, bookings: Booking[]): AdminListR
       status: booking.status,
       booking,
       playerName: booking.player_name ?? null,
+      paymentStatus: normalizePaymentStatus(booking.payment_status),
       actionable: true,
     })
 

@@ -27,6 +27,10 @@ Auto-generated from all feature plans. Last updated: 2026-04-17
 - Supabase PostgreSQL with RLS (existing `bookings` and `court_settings` tables; (014-admin-booking-calendar-fixes)
 - TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8, shadcn/ui primitives already present (015-init-speckit-feature)
 - Supabase PostgreSQL with RLS (no schema changes for this feature) (015-init-speckit-feature)
+- Supabase PostgreSQL with RLS (no schema changes required) (016-setup-feature-branch)
+- TypeScript 6.0.2 with React 19.2.4 + date-fns 4.1.0, React Query 5.99.0, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8 (016-setup-feature-branch)
+- Supabase PostgreSQL — read-only; no schema changes. `bookings` and `court_settings` tables are the data sources. (016-setup-feature-branch)
+- Supabase PostgreSQL (existing `court_settings` + `bookings` reads only; no schema changes) (017-create-feature-branch)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -47,9 +51,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
-- 015-init-speckit-feature: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8, shadcn/ui primitives already present
-- 014-admin-booking-calendar-fixes: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui,
-- 013-merge-booking-rows: Added TypeScript 6.0.2 + React 19.2.4, date-fns 4.1.0 (`parseISO`, `setHours`, `setMinutes`, `addMinutes`), Tailwind CSS 3.4.17
+- 017-create-feature-branch: Added TypeScript 6.0.2 with React 19.2.4 + date-fns 4.1.0, React Query 5.99.0, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8
+- 016-setup-feature-branch: Added TypeScript 6.0.2 with React 19.2.4 + date-fns 4.1.0, React Query 5.99.0, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8
+- 016-setup-feature-branch: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8, shadcn/ui
 
 
 <!-- MANUAL ADDITIONS START -->
