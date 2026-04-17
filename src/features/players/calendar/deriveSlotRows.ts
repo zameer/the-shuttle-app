@@ -19,14 +19,29 @@ function dayStart(date: Date, hour: number): Date {
   return setMilliseconds(setSeconds(setMinutes(setHours(date, hour), 0), 0), 0)
 }
 
+function dayAtTime(date: Date, time: string): Date {
+  const [hourPart, minutePart, secondPart] = time.split(':').map(Number)
+  const hour = Number.isFinite(hourPart) ? hourPart : SCHEDULE_END_HOUR
+  const minute = Number.isFinite(minutePart) ? minutePart : 0
+  const second = Number.isFinite(secondPart) ? secondPart : 0
+  return setMilliseconds(setSeconds(setMinutes(setHours(date, hour), minute), second), 0)
+}
+
 /**
  * Derives exact chronological slot rows for a given date from existing booking data.
- * Covers the visible schedule window (06:00–22:00).
+ * Covers the visible schedule window (scheduleStartHour–scheduleEnd).
  * No API calls — pure client-side derivation from the existing booking query.
+ *
+ * @param scheduleEndTime - Court close time in HH:mm[:ss] format from court settings.
+ *   If undefined, falls back to the default SCHEDULE_END_HOUR boundary.
  */
-export function deriveSlotRows(date: Date, bookings: Booking[]): SlotRowRepresentation[] {
+export function deriveSlotRows(
+  date: Date,
+  bookings: Booking[],
+  scheduleEndTime?: string,
+): SlotRowRepresentation[] {
   const scheduleStart = dayStart(date, SCHEDULE_START_HOUR)
-  const scheduleEnd = dayStart(date, SCHEDULE_END_HOUR)
+  const scheduleEnd = scheduleEndTime ? dayAtTime(date, scheduleEndTime) : dayStart(date, SCHEDULE_END_HOUR)
   const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()))
   const rows: SlotRowRepresentation[] = []
 
@@ -45,6 +60,11 @@ export function deriveSlotRows(date: Date, bookings: Booking[]): SlotRowRepresen
     const bookingEnd = parseISO(booking.end_time)
     const effectiveStart = bookingStart < scheduleStart ? scheduleStart : bookingStart
     const effectiveEnd = bookingEnd > scheduleEnd ? scheduleEnd : bookingEnd
+
+    // Skip rows that start at or beyond close time after boundary clamping.
+    if (effectiveEnd <= effectiveStart) {
+      continue
+    }
 
     while (addMinutes(cursor, SLOT_STEP_MINUTES) <= effectiveStart) {
       const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)

@@ -4,6 +4,14 @@ import { cn } from '@/lib/utils'
 import type { Booking } from '@/features/booking/useBookings'
 import { deriveAdminListRows } from '@/features/admin/calendar/deriveAdminListRows'
 import { BOOKING_STATUS_DOT_CLASS, BOOKING_STATUS_LABEL, BOOKING_STATUS_ROW_CLASS } from '@/features/booking/bookingStatusMeta'
+import { useCourtSettings } from '@/features/admin/useCourtSettings'
+import { getPaymentStatusLabel, getPaymentStatusPillClassName } from '@/features/booking/paymentStatus'
+
+// Parse "HH:MM:SS" or "HH:MM" -> decimal hours (e.g. "22:30:00" -> 22.5)
+function timeStrToHours(t: string): number {
+  const [h, m] = t.split(':').map(Number)
+  return h + (m || 0) / 60
+}
 
 interface AdminListViewProps {
   currentDate: Date
@@ -28,7 +36,11 @@ export default function AdminListView({
   onAvailableSlotClick,
   onAddBooking,
 }: AdminListViewProps) {
-  const rows = deriveAdminListRows(currentDate, bookings)
+  const { data: courtSettings } = useCourtSettings()
+  const scheduleEndHour = courtSettings
+    ? Math.ceil(timeStrToHours(courtSettings.court_close_time))
+    : undefined
+  const rows = deriveAdminListRows(currentDate, bookings, scheduleEndHour)
   const isPastDate = isBefore(startOfDay(currentDate), startOfDay(new Date()))
 
   return (
@@ -73,6 +85,18 @@ export default function AdminListView({
           {row.type === 'booking' && row.playerName && (
             <span className="ml-1 rounded-full bg-white/60 px-2 py-0.5 text-xs font-medium truncate max-w-[120px]">
               {row.playerName}
+            </span>
+          )}
+
+          {/* Payment status pill (booking rows only, hidden for UNKNOWN) */}
+          {row.type === 'booking' && row.paymentStatus && row.paymentStatus !== 'UNKNOWN' && (
+            <span
+              className={cn(
+                'shrink-0 rounded-full border px-2 py-0.5 text-xs',
+                getPaymentStatusPillClassName(row.paymentStatus),
+              )}
+            >
+              {getPaymentStatusLabel(row.paymentStatus)}
             </span>
           )}
 

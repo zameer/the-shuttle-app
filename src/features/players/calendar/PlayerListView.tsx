@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Booking } from '@/features/booking/useBookings'
 import { deriveSlotRows } from './deriveSlotRows'
+import { useCourtSettings } from '@/features/admin/useCourtSettings'
 
 interface PlayerListViewProps {
   currentDate: Date
@@ -44,7 +45,9 @@ export default function PlayerListView({
   readOnly,
   onSlotClick,
 }: PlayerListViewProps) {
-  const rows = deriveSlotRows(currentDate, bookings)
+  const { data: courtSettings } = useCourtSettings()
+  const scheduleEndTime = courtSettings?.court_close_time
+  const rows = deriveSlotRows(currentDate, bookings, scheduleEndTime)
 
   return (
     <ul
