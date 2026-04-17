@@ -11,12 +11,15 @@ interface CalendarProps {
 export default function Calendar({ date, bookings, onSlotClick, readOnly = false }: CalendarProps) {
   // Generate hours for the day (e.g. 6 AM to 10 PM)
   const hours = Array.from({ length: 17 }, (_, i) => addHours(startOfDay(date), i + 6))
+  const isPastDate = startOfDay(date) < startOfDay(new Date())
 
   const getSlotColor = (status: string) => {
     switch (status) {
       case 'CONFIRMED': return 'bg-green-100 border-green-500 text-green-800'
       case 'PENDING': return 'bg-yellow-100 border-yellow-500 text-yellow-800'
       case 'UNAVAILABLE': return 'bg-gray-200 border-gray-400 text-gray-500 opacity-70 cursor-not-allowed'
+      case 'CANCELLED': return 'bg-red-100 border-red-400 text-red-800'
+      case 'NO_SHOW': return 'bg-orange-100 border-orange-400 text-orange-800'
       default: return 'bg-white border-gray-200 text-gray-800 hover:bg-gray-50'
     }
   }
@@ -41,6 +44,9 @@ export default function Calendar({ date, bookings, onSlotClick, readOnly = false
       <div className="divide-y max-h-[600px] overflow-y-auto">
         {hours.map(hour => {
           const { status, booking } = getSlotDetails(hour)
+          if (isPastDate && status === 'AVAILABLE') {
+            return null
+          }
           const colorClass = getSlotColor(status)
 
           return (

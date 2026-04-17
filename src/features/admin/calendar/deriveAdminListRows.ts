@@ -1,11 +1,11 @@
-import { addMinutes, parseISO, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns'
+import { addMinutes, isBefore, parseISO, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type AdminListRowStatus = 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE'
+export type AdminListRowStatus = 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE' | 'CANCELLED' | 'NO_SHOW'
 
 export interface AdminListRow {
   type: 'booking' | 'available'
@@ -52,6 +52,7 @@ function toScheduleEnd(date: Date): Date {
 export function deriveAdminListRows(date: Date, bookings: Booking[]): AdminListRow[] {
   const scheduleStart = toScheduleStart(date)
   const scheduleEnd = toScheduleEnd(date)
+  const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()))
 
   // Filter to bookings that overlap the schedule window and sort ascending
   const dayBookings = bookings
@@ -76,19 +77,21 @@ export function deriveAdminListRows(date: Date, bookings: Booking[]): AdminListR
     // Fill 60-min available rows between cursor and booking start
     while (addMinutes(cursor, SLOT_STEP_MINUTES) <= effectiveBStart) {
       const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
-      rows.push({
-        type: 'available',
-        slotStart: cursor,
-        slotEnd,
-        durationMinutes: SLOT_STEP_MINUTES,
-        status: 'AVAILABLE',
-        actionable: true,
-      })
+      if (!isPastDate) {
+        rows.push({
+          type: 'available',
+          slotStart: cursor,
+          slotEnd,
+          durationMinutes: SLOT_STEP_MINUTES,
+          status: 'AVAILABLE',
+          actionable: true,
+        })
+      }
       cursor = slotEnd
     }
 
     // Emit partial gap row if remaining time before booking is < 60 min
-    if (cursor < effectiveBStart) {
+    if (!isPastDate && cursor < effectiveBStart) {
       const partialDuration = (effectiveBStart.getTime() - cursor.getTime()) / 60000
       rows.push({
         type: 'available',
@@ -123,19 +126,21 @@ export function deriveAdminListRows(date: Date, bookings: Booking[]): AdminListR
   // Fill remaining 60-min available slots after the last booking
   while (addMinutes(cursor, SLOT_STEP_MINUTES) <= scheduleEnd) {
     const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
-    rows.push({
-      type: 'available',
-      slotStart: cursor,
-      slotEnd,
-      durationMinutes: SLOT_STEP_MINUTES,
-      status: 'AVAILABLE',
-      actionable: true,
-    })
+    if (!isPastDate) {
+      rows.push({
+        type: 'available',
+        slotStart: cursor,
+        slotEnd,
+        durationMinutes: SLOT_STEP_MINUTES,
+        status: 'AVAILABLE',
+        actionable: true,
+      })
+    }
     cursor = slotEnd
   }
 
   // Emit partial trailing gap if any unbooked time remains before schedule end
-  if (cursor < scheduleEnd) {
+  if (!isPastDate && cursor < scheduleEnd) {
     const partialDuration = (scheduleEnd.getTime() - cursor.getTime()) / 60000
     rows.push({
       type: 'available',

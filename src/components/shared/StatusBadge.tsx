@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { BookingStatus } from '@/features/booking/useBookings'
+import { BOOKING_STATUS_BADGE_CLASS, BOOKING_STATUS_LABEL } from '@/features/booking/bookingStatusMeta'
 
 interface StatusBadgeProps {
   status: BookingStatus | null
@@ -12,7 +13,7 @@ interface StatusBadgeProps {
 /**
  * StatusBadge - Displays booking status with optional player name (admin only)
  * 
- * @param status - Booking status (CONFIRMED, PENDING, UNAVAILABLE)
+ * @param status - Booking status (CONFIRMED, PENDING, UNAVAILABLE, CANCELLED, NO_SHOW)
  * @param playerName - Player name to display (only shown if isAdmin && variant='block')
  * @param isAdmin - If true, displays player name on separate line
  * @param variant - 'inline' (status text) or 'block' (name on first line, status on second)
@@ -33,30 +34,9 @@ export default function StatusBadge({
   variant = 'inline',
   className,
 }: StatusBadgeProps) {
-  // Map status to background color and text content
-  const statusConfig = {
-    CONFIRMED: {
-      bg: 'bg-green-100',
-      text: 'text-green-800',
-      label: 'Reserved',
-    },
-    PENDING: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-800',
-      label: 'Pending',
-    },
-    UNAVAILABLE: {
-      bg: 'bg-gray-200',
-      text: 'text-gray-600',
-      label: 'Unavailable',
-    },
-  }
-
-  const config = status && statusConfig[status] ? statusConfig[status] : {
-    bg: 'bg-blue-100',
-    text: 'text-blue-800',
-    label: 'Open',
-  }
+  const statusKey = status ?? 'AVAILABLE'
+  const badgeClasses = BOOKING_STATUS_BADGE_CLASS[statusKey]
+  const label = BOOKING_STATUS_LABEL[statusKey]
 
   // Inline variant: just status text
   if (variant === 'inline') {
@@ -64,12 +44,11 @@ export default function StatusBadge({
       <div
         className={cn(
           'text-xs font-semibold px-2.5 py-1 rounded-full',
-          config.bg,
-          config.text,
+          badgeClasses,
           className
         )}
       >
-        {config.label}
+        {label}
       </div>
     )
   }
@@ -85,11 +64,10 @@ export default function StatusBadge({
       <div
         className={cn(
           'text-xs font-semibold px-2.5 py-1 rounded-full w-fit',
-          config.bg,
-          config.text
+          badgeClasses
         )}
       >
-        {config.label}
+        {label}
       </div>
     </div>
   )

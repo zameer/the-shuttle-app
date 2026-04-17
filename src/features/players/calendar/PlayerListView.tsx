@@ -15,6 +15,8 @@ const STATUS_STYLES: Record<string, string> = {
   CONFIRMED: 'bg-green-100 border-green-200 text-green-900',
   PENDING: 'bg-yellow-100 border-yellow-200 text-yellow-900',
   UNAVAILABLE: 'bg-gray-100 border-gray-200 text-gray-400',
+  CANCELLED: 'bg-red-100 border-red-200 text-red-900',
+  NO_SHOW: 'bg-orange-100 border-orange-200 text-orange-900',
   AVAILABLE: 'bg-blue-50 border-blue-200 text-blue-900',
 }
 
@@ -22,6 +24,8 @@ const STATUS_DOT: Record<string, string> = {
   CONFIRMED: 'bg-green-500',
   PENDING: 'bg-yellow-500',
   UNAVAILABLE: 'bg-gray-400',
+  CANCELLED: 'bg-red-500',
+  NO_SHOW: 'bg-orange-500',
   AVAILABLE: 'bg-blue-400',
 }
 
@@ -29,6 +33,8 @@ const STATUS_LABEL: Record<string, string> = {
   CONFIRMED: 'Reserved',
   PENDING: 'Pending',
   UNAVAILABLE: 'Unavailable',
+  CANCELLED: 'Cancelled',
+  NO_SHOW: 'No Show',
   AVAILABLE: 'Available',
 }
 

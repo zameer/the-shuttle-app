@@ -3,8 +3,16 @@ import { endOfDay, endOfWeek, startOfDay, startOfWeek } from 'date-fns'
 import { supabase } from '@/services/supabase'
 import { normalizePaymentStatus } from '@/features/booking/paymentStatus'
 
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE'
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE' | 'CANCELLED' | 'NO_SHOW'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'UNPAID' | 'UNKNOWN'
+
+export interface UpdateBookingPayload {
+  id: string
+  status?: BookingStatus
+  payment_status?: PaymentStatus
+  hourly_rate?: number
+  total_price?: number
+}
 
 export interface Booking {
   id: string
@@ -154,13 +162,32 @@ export function useDeleteBooking() {
 }
 
 export function useUpdateBookingStatus() {
-  const queryClient = useQueryClient()
+  const updateBooking = useUpdateBooking()
 
   return useMutation({
     mutationFn: async ({ id, status, payment_status }: { id: string, status?: BookingStatus, payment_status?: PaymentStatus }) => {
+      return updateBooking.mutateAsync({ id, status, payment_status })
+    },
+    onSuccess: () => {
+      updateBooking.reset()
+    }
+  })
+}
+
+export function useUpdateBooking() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, status, payment_status, hourly_rate, total_price }: UpdateBookingPayload) => {
       const updates: Record<string, unknown> = {}
-      if (status) updates.status = status
-      if (payment_status) updates.payment_status = payment_status
+      if (status !== undefined) updates.status = status
+      if (payment_status !== undefined) updates.payment_status = payment_status
+      if (hourly_rate !== undefined) updates.hourly_rate = hourly_rate
+      if (total_price !== undefined) updates.total_price = total_price
+
+      if (Object.keys(updates).length === 0) {
+        throw new Error('No fields provided for booking update')
+      }
 
       const { data, error } = await supabase
         .from('bookings')

@@ -14,7 +14,7 @@ const bookingSchema = z.object({
   player_phone_number: z.string().min(5, "Valid phone number is required"),
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
-  status: z.enum(['AVAILABLE', 'PENDING', 'CONFIRMED', 'UNAVAILABLE']),
+  status: z.enum(['PENDING', 'CONFIRMED', 'UNAVAILABLE', 'CANCELLED', 'NO_SHOW']),
   hourly_rate: z.number().min(0, "Hourly rate is required"),
   payment_status: z.enum(['PENDING', 'PAID']),
 })
@@ -28,7 +28,7 @@ interface Props {
   onSuccess: () => void
 }
 
-export default function BookingForm({ initialStartTime, onClose, onSuccess }: Props) {
+export default function BookingForm({ initialDate, initialStartTime, onClose, onSuccess }: Props) {
   const { data: settings } = useSettings()
 
   // Standardize the HTML input datetime-local string
@@ -37,10 +37,20 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
     return new Date(d.getTime() - offset).toISOString().slice(0, 16)
   }
 
-  const defaultStart = initialStartTime ? getLocalDatetimeStr(initialStartTime) : getLocalDatetimeStr(new Date())
+  const baseStartDate = initialStartTime
+    ? new Date(initialStartTime)
+    : (() => {
+        const fallback = new Date(initialDate ?? new Date())
+        if (initialDate) {
+          fallback.setHours(6, 0, 0, 0)
+        }
+        return fallback
+      })()
+
+  const defaultStart = getLocalDatetimeStr(baseStartDate)
   
   // Default end time is 1 hour after start
-  const placeholderEnd = new Date(initialStartTime || new Date())
+  const placeholderEnd = new Date(baseStartDate)
   placeholderEnd.setHours(placeholderEnd.getHours() + 1)
   const defaultEnd = getLocalDatetimeStr(placeholderEnd)
 
@@ -90,8 +100,9 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
 
       if (error) throw error
       onSuccess()
-    } catch (e: any) {
-      alert("Failed to save booking. " + e.message)
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error'
+      alert("Failed to save booking. " + message)
     }
   }
 
@@ -160,6 +171,8 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
                     <option value="CONFIRMED">Confirmed</option>
                     <option value="PENDING">Pending</option>
                     <option value="UNAVAILABLE">Block (Unavailable)</option>
+                    <option value="CANCELLED">Cancelled</option>
+                    <option value="NO_SHOW">No Show</option>
                   </select>
                 )}
               />
@@ -175,7 +188,7 @@ export default function BookingForm({ initialStartTime, onClose, onSuccess }: Pr
                     onChange={e => field.onChange(Number(e.target.value))}
                     className="w-full border rounded-md px-3 py-2 text-sm focus:ring-blue-500 outline-none border-gray-300 bg-white"
                   >
-                    {settings?.availableRates.map(rate => (
+                    {(settings?.availableRates ?? [600, 500]).map(rate => (
                       <option key={rate} value={rate}>{rate}</option>
                     ))}
                     <option value={0}>Custom (Free)</option>

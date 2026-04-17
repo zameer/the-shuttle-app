@@ -153,11 +153,15 @@ export default function WeekView({ currentDate, onTimeSlotClick, bookings = [], 
                       if (booking.status === "CONFIRMED")   colorClass = "bg-green-100 border-green-200 text-green-800 hover:bg-green-200";
                       if (booking.status === "PENDING")     colorClass = "bg-yellow-100 border-yellow-200 text-yellow-800 hover:bg-yellow-200";
                       if (booking.status === "UNAVAILABLE") colorClass = "bg-gray-300 border-gray-400 text-gray-600 opacity-90";
+                      if (booking.status === "CANCELLED")   colorClass = "bg-red-100 border-red-200 text-red-800 hover:bg-red-200";
+                      if (booking.status === "NO_SHOW")     colorClass = "bg-orange-100 border-orange-200 text-orange-800 hover:bg-orange-200";
 
                       // Status label for display (matches StatusBadge logic)
                       const statusLabel = booking.status === "CONFIRMED" ? "Reserved" :
                                          booking.status === "PENDING" ? "Pending" :
-                                         booking.status === "UNAVAILABLE" ? "Unavailable" : "Open";
+                                         booking.status === "UNAVAILABLE" ? "Unavailable" :
+                                         booking.status === "CANCELLED" ? "Cancelled" :
+                                         booking.status === "NO_SHOW" ? "No Show" : "Open";
                       const paymentStatus = normalizePaymentStatus(booking.payment_status)
                       const paymentLabel = getPaymentStatusLabel(paymentStatus)
 

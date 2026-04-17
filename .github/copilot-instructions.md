@@ -24,6 +24,9 @@ Auto-generated from all feature plans. Last updated: 2026-04-17
 - N/A — display-layer change only; no DB access (012-set-list-default)
 - TypeScript 6.0.2 + React 19.2.4, date-fns 4.1.0 (`parseISO`, `setHours`, `setMinutes`, `addMinutes`), Tailwind CSS 3.4.17 (013-merge-booking-rows)
 - N/A — client-side display derivation only; existing booking query reused (013-merge-booking-rows)
+- Supabase PostgreSQL with RLS (existing `bookings` and `court_settings` tables; (014-admin-booking-calendar-fixes)
+- TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8, shadcn/ui primitives already present (015-init-speckit-feature)
+- Supabase PostgreSQL with RLS (no schema changes for this feature) (015-init-speckit-feature)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -44,9 +47,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
+- 015-init-speckit-feature: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8, shadcn/ui primitives already present
+- 014-admin-booking-calendar-fixes: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui,
 - 013-merge-booking-rows: Added TypeScript 6.0.2 + React 19.2.4, date-fns 4.1.0 (`parseISO`, `setHours`, `setMinutes`, `addMinutes`), Tailwind CSS 3.4.17
-- 012-set-list-default: Added TypeScript 6.0.2 + date-fns 4.1.0 (`addMinutes`, `parseISO`, `setHours`, …)
-- 012-set-list-default: Added TypeScript 6.0.2 + React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, date-fns 4.1.0, lucide-react 1.8
 
 
 <!-- MANUAL ADDITIONS START -->
