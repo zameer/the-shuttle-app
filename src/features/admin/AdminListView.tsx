@@ -1,15 +1,16 @@
-import { format } from 'date-fns'
+import { format, isBefore, startOfDay } from 'date-fns'
 import { MoreVertical, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Booking } from '@/features/booking/useBookings'
 import { deriveAdminListRows } from '@/features/admin/calendar/deriveAdminListRows'
-import type { AdminListRow } from '@/features/admin/calendar/deriveAdminListRows'
+import { BOOKING_STATUS_DOT_CLASS, BOOKING_STATUS_LABEL, BOOKING_STATUS_ROW_CLASS } from '@/features/booking/bookingStatusMeta'
 
 interface AdminListViewProps {
   currentDate: Date
   bookings: Booking[]
   onBookingClick: (booking: Booking) => void
   onAvailableSlotClick: (date: Date) => void
+  onAddBooking: (date: Date) => void
 }
 
 function formatDuration(minutes: number): string {
@@ -20,30 +21,30 @@ function formatDuration(minutes: number): string {
   return `${hours}h ${mins}min`
 }
 
-const statusStyles: Record<AdminListRow['status'], string> = {
-  CONFIRMED: 'bg-green-100 border-green-200 text-green-900',
-  PENDING: 'bg-yellow-100 border-yellow-200 text-yellow-900',
-  UNAVAILABLE: 'bg-gray-100 border-gray-200 text-gray-400',
-  AVAILABLE: 'bg-blue-50 border-blue-200 text-blue-900',
-}
-
-const statusDotStyles: Record<AdminListRow['status'], string> = {
-  CONFIRMED: 'bg-green-500',
-  PENDING: 'bg-yellow-500',
-  UNAVAILABLE: 'bg-gray-400',
-  AVAILABLE: 'bg-blue-400',
-}
-
 export default function AdminListView({
   currentDate,
   bookings,
   onBookingClick,
   onAvailableSlotClick,
+  onAddBooking,
 }: AdminListViewProps) {
   const rows = deriveAdminListRows(currentDate, bookings)
+  const isPastDate = isBefore(startOfDay(currentDate), startOfDay(new Date()))
 
   return (
-    <ul role="list" aria-label="Time slot availability" className="w-full space-y-1">
+    <div className="space-y-2">
+      {isPastDate && (
+        <button
+          type="button"
+          onClick={() => onAddBooking(startOfDay(currentDate))}
+          className="w-full flex items-center justify-center gap-2 min-h-[44px] rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Booking for this date
+        </button>
+      )}
+
+      <ul role="list" aria-label="Time slot availability" className="w-full space-y-1">
       {rows.map((row, idx) => (
         <li
           key={idx}
@@ -51,12 +52,12 @@ export default function AdminListView({
           className={cn(
             'flex items-center gap-3 px-3 py-2 min-h-[44px] rounded-lg border',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-            statusStyles[row.status],
+            BOOKING_STATUS_ROW_CLASS[row.status],
           )}
         >
           {/* Status dot */}
           <span
-            className={cn('w-2 h-2 rounded-full shrink-0', statusDotStyles[row.status])}
+            className={cn('w-2 h-2 rounded-full shrink-0', BOOKING_STATUS_DOT_CLASS[row.status])}
             aria-hidden="true"
           />
 
@@ -77,7 +78,7 @@ export default function AdminListView({
 
           {/* "Available" label for gap rows */}
           {row.type === 'available' && (
-            <span className="text-xs opacity-60">Available</span>
+            <span className="text-xs opacity-60">{BOOKING_STATUS_LABEL.AVAILABLE}</span>
           )}
 
           {/* Trailing action button */}
@@ -108,6 +109,7 @@ export default function AdminListView({
           )}
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   )
 }

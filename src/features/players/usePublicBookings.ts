@@ -5,7 +5,7 @@ export interface PublicBooking {
   id: string
   start_time: string
   end_time: string
-  status: 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE'
+  status: 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE' | 'CANCELLED' | 'NO_SHOW'
 }
 
 export function usePublicBookings(startDate: Date, endDate: Date) {

@@ -7,7 +7,7 @@ import { getCalendarViewRange } from '@/components/shared/calendar/range'
 import type { CalendarView } from '@/components/shared/calendar/CalendarContainer'
 import BookingDetailsModal from '@/features/booking/BookingDetailsModal'
 import BookingForm from '@/features/booking/BookingForm'
-import { useBookings, useUpdateBookingStatus } from '@/features/booking/useBookings'
+import { useBookings, useUpdateBooking } from '@/features/booking/useBookings'
 import type { Booking } from '@/features/booking/useBookings'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDateRangeFilter } from '@/hooks/useDateRangeFilter'
@@ -39,7 +39,7 @@ export default function AdminCalendarPage() {
 
   // Fetch bookings WITH player names for admin view
   const { data: bookings = [], isLoading } = useBookings(queryStartDate, queryEndDate, true)
-  const { mutateAsync: updateStatus } = useUpdateBookingStatus()
+  const { mutateAsync: updateBooking } = useUpdateBooking()
   const queryClient = useQueryClient()
 
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null)
@@ -107,6 +107,7 @@ export default function AdminCalendarPage() {
             bookings={bookings}
             onBookingClick={(b) => setActiveBooking(b)}
             onAvailableSlotClick={(d) => { setSelectedSlotHour(d); setIsBookingFormOpen(true) }}
+            onAddBooking={(d) => { setSelectedSlotHour(d); setIsBookingFormOpen(true) }}
           />
         </div>
       ) : (
@@ -154,7 +155,7 @@ export default function AdminCalendarPage() {
           isOpen={true}
           isAdmin={true}
           onClose={() => setActiveBooking(null)}
-          onUpdateStatus={(id, status, payment_status) => updateStatus({ id, status, payment_status })}
+          onSave={(payload) => updateBooking(payload)}
         />
       )}
 

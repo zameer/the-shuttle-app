@@ -1,4 +1,4 @@
-import { addMinutes, parseISO, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns'
+import { addMinutes, isBefore, parseISO, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
 
 export interface SlotRowRepresentation {
@@ -6,7 +6,7 @@ export interface SlotRowRepresentation {
   slotStart: Date
   slotEnd: Date
   durationMinutes: number
-  status: 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE'
+  status: 'AVAILABLE' | 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE' | 'CANCELLED' | 'NO_SHOW'
   booking?: Booking
   actionable: boolean
 }
@@ -27,6 +27,7 @@ function dayStart(date: Date, hour: number): Date {
 export function deriveSlotRows(date: Date, bookings: Booking[]): SlotRowRepresentation[] {
   const scheduleStart = dayStart(date, SCHEDULE_START_HOUR)
   const scheduleEnd = dayStart(date, SCHEDULE_END_HOUR)
+  const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()))
   const rows: SlotRowRepresentation[] = []
 
   const dayBookings = bookings
@@ -47,18 +48,20 @@ export function deriveSlotRows(date: Date, bookings: Booking[]): SlotRowRepresen
 
     while (addMinutes(cursor, SLOT_STEP_MINUTES) <= effectiveStart) {
       const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
-      rows.push({
-        type: 'available',
-        slotStart: cursor,
-        slotEnd,
-        durationMinutes: SLOT_STEP_MINUTES,
-        status: 'AVAILABLE',
-        actionable: true,
-      })
+      if (!isPastDate) {
+        rows.push({
+          type: 'available',
+          slotStart: cursor,
+          slotEnd,
+          durationMinutes: SLOT_STEP_MINUTES,
+          status: 'AVAILABLE',
+          actionable: true,
+        })
+      }
       cursor = slotEnd
     }
 
-    if (cursor < effectiveStart) {
+    if (!isPastDate && cursor < effectiveStart) {
       rows.push({
         type: 'available',
         slotStart: cursor,
@@ -87,18 +90,20 @@ export function deriveSlotRows(date: Date, bookings: Booking[]): SlotRowRepresen
 
   while (addMinutes(cursor, SLOT_STEP_MINUTES) <= scheduleEnd) {
     const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
-    rows.push({
-      type: 'available',
-      slotStart: cursor,
-      slotEnd,
-      durationMinutes: SLOT_STEP_MINUTES,
-      status: 'AVAILABLE',
-      actionable: true,
-    })
+    if (!isPastDate) {
+      rows.push({
+        type: 'available',
+        slotStart: cursor,
+        slotEnd,
+        durationMinutes: SLOT_STEP_MINUTES,
+        status: 'AVAILABLE',
+        actionable: true,
+      })
+    }
     cursor = slotEnd
   }
 
-  if (cursor < scheduleEnd) {
+  if (!isPastDate && cursor < scheduleEnd) {
     rows.push({
       type: 'available',
       slotStart: cursor,
