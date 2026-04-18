@@ -4,6 +4,7 @@ import type {
   FinancialReportOutput,
   NormalizedFinancialBooking,
   OutstandingPendingPlayerRecord,
+  PaidBreakdownOutput,
   PaymentBreakdownEntry,
   PaymentBucket,
   RevenueLossBucket,
@@ -99,11 +100,11 @@ function buildSummary(rows: NormalizedFinancialBooking[]) {
   }
 }
 
-function buildBreakdown(rows: NormalizedFinancialBooking[]) {
+function buildPaidBreakdown(rows: NormalizedFinancialBooking[]): PaidBreakdownOutput {
   const map = new Map<string, PaymentBreakdownEntry>()
 
   for (const row of rows) {
-    if (!isActiveFinancialStatus(row.bookingStatus)) {
+    if (!isActiveFinancialStatus(row.bookingStatus) || row.paymentBucket !== 'PAID') {
       continue
     }
 
@@ -127,26 +128,22 @@ function buildBreakdown(rows: NormalizedFinancialBooking[]) {
     existing.totalAmount = round2(existing.totalAmount + row.amount)
   }
 
-  const paidEntries: PaymentBreakdownEntry[] = []
-  const pendingEntries: PaymentBreakdownEntry[] = []
+  const entries: PaymentBreakdownEntry[] = []
 
   for (const entry of map.values()) {
-    const normalized = {
+    entries.push({
       ...entry,
       totalHours: round2(entry.totalHours),
       totalAmount: round2(entry.totalAmount),
-    }
-    if (entry.paymentBucket === 'PAID') {
-      paidEntries.push(normalized)
-    } else {
-      pendingEntries.push(normalized)
-    }
+    })
   }
 
-  paidEntries.sort((a, b) => b.totalAmount - a.totalAmount)
-  pendingEntries.sort((a, b) => b.totalAmount - a.totalAmount)
+  entries.sort((a, b) => b.totalAmount - a.totalAmount)
 
-  return { paidEntries, pendingEntries }
+  return {
+    entries,
+    totalEntries: entries.length,
+  }
 }
 
 function buildOutstandingPending(rows: NormalizedFinancialBooking[]) {
@@ -224,31 +221,27 @@ function buildRevenueLoss(rows: NormalizedFinancialBooking[]) {
   }
 }
 
-function calculateReconciliation(summary: FinancialReportOutput['summary'], breakdown: FinancialReportOutput['breakdown']) {
-  const paidAmount = round2(breakdown.paidEntries.reduce((sum, entry) => sum + entry.totalAmount, 0))
-  const pendingAmount = round2(breakdown.pendingEntries.reduce((sum, entry) => sum + entry.totalAmount, 0))
-  const paidHours = round2(breakdown.paidEntries.reduce((sum, entry) => sum + entry.totalHours, 0))
-  const pendingHours = round2(breakdown.pendingEntries.reduce((sum, entry) => sum + entry.totalHours, 0))
+function calculateReconciliation(summary: FinancialReportOutput['summary'], paidBreakdown: FinancialReportOutput['paidBreakdown']) {
+  const paidAmount = round2(paidBreakdown.entries.reduce((sum, entry) => sum + entry.totalAmount, 0))
+  const paidHours = round2(paidBreakdown.entries.reduce((sum, entry) => sum + entry.totalHours, 0))
 
   return {
     paidAmountMatches: paidAmount === summary.paidAmount,
-    pendingAmountMatches: pendingAmount === summary.pendingAmount,
     paidHoursMatches: paidHours === summary.paidHours,
-    pendingHoursMatches: pendingHours === summary.pendingHours,
   }
 }
 
 export function buildFinancialReport(rows: BookingRowSchema[]): FinancialReportOutput {
   const normalizedRows = normalizeFinancialRows(rows)
   const summary = buildSummary(normalizedRows)
-  const breakdown = buildBreakdown(normalizedRows)
+  const paidBreakdown = buildPaidBreakdown(normalizedRows)
   const outstandingPending = buildOutstandingPending(normalizedRows)
   const revenueLoss = buildRevenueLoss(normalizedRows)
-  const reconciliation = calculateReconciliation(summary, breakdown)
+  const reconciliation = calculateReconciliation(summary, paidBreakdown)
 
   return {
     summary,
-    breakdown,
+    paidBreakdown,
     outstandingPending,
     revenueLoss,
     reconciliation,

@@ -26,7 +26,7 @@ import ListDateNav from '@/features/players/calendar/ListDateNav'
 export default function AdminCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<CalendarView>('week')
-  const [displayMode, setDisplayMode] = useState<'calendar' | 'list'>('calendar')
+  const [displayMode, setDisplayMode] = useState<'calendar' | 'list'>('list')
   const dateRangeFilter = useDateRangeFilter()
 
   const calendarRange = useMemo(() => getCalendarViewRange(currentDate, view), [currentDate, view])

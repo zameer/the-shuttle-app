@@ -35,6 +35,17 @@ export interface PaymentBreakdownEntry {
   totalAmount: number
 }
 
+export interface PaidBreakdownOutput {
+  entries: PaymentBreakdownEntry[]
+  totalEntries: number
+}
+
+export interface PaidBreakdownModalState {
+  isOpen: boolean
+  currentPage: number
+  pageSize: number
+}
+
 export interface OutstandingPendingSlot {
   bookingId: string
   startTime: string
@@ -65,10 +76,7 @@ export interface RevenueLossOutput {
 
 export interface FinancialReportOutput {
   summary: FinancialSummary
-  breakdown: {
-    paidEntries: PaymentBreakdownEntry[]
-    pendingEntries: PaymentBreakdownEntry[]
-  }
+  paidBreakdown: PaidBreakdownOutput
   outstandingPending: {
     players: OutstandingPendingPlayerRecord[]
     totalOutstandingAmount: number
@@ -76,8 +84,6 @@ export interface FinancialReportOutput {
   revenueLoss: RevenueLossOutput
   reconciliation: {
     paidAmountMatches: boolean
-    pendingAmountMatches: boolean
     paidHoursMatches: boolean
-    pendingHoursMatches: boolean
   }
 }

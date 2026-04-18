@@ -20,7 +20,7 @@ export default function AdminLayout() {
       <header className="bg-white border-b px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold tracking-tight">Admin Console</h1>
+            <h1 className="text-xl font-bold tracking-tight">THE SHUTTLE</h1>
             {/* Desktop navigation */}
             <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
               {navItems.map(item => (
