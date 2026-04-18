@@ -13,7 +13,7 @@ export default function OutstandingPendingSection({
   return (
     <section className="rounded-xl border bg-white p-4 shadow-sm">
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-amber-700">Outstanding Pending by Player</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-amber-700">Outstanding by Player</h3>
         <p className="text-sm font-semibold text-gray-900">Total Outstanding: LKR {totalOutstandingAmount.toLocaleString()}</p>
       </div>
 
