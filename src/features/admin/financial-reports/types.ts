@@ -1,0 +1,83 @@
+export type PaymentBucket = 'PAID' | 'PENDING'
+export type ImpactType = 'NO_SHOW' | 'CANCELLED'
+
+export interface ReportDateRangeInput {
+  startDate: string
+  endDate: string
+}
+
+export interface NormalizedFinancialBooking {
+  bookingId: string
+  playerPhoneNumber: string | null
+  playerName: string | null
+  slotStart: string
+  slotEnd: string
+  durationHours: number
+  bookingStatus: 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE' | 'CANCELLED' | 'NO_SHOW'
+  paymentBucket: PaymentBucket
+  amount: number
+  amountSource: 'total_price' | 'hourly_rate_x_duration' | 'fallback_zero'
+}
+
+export interface FinancialSummary {
+  paidHours: number
+  paidAmount: number
+  pendingHours: number
+  pendingAmount: number
+}
+
+export interface PaymentBreakdownEntry {
+  paymentBucket: PaymentBucket
+  playerPhoneNumber: string | null
+  playerName: string | null
+  bookingCount: number
+  totalHours: number
+  totalAmount: number
+}
+
+export interface OutstandingPendingSlot {
+  bookingId: string
+  startTime: string
+  endTime: string
+  status: 'PENDING' | 'CONFIRMED' | 'UNAVAILABLE' | 'CANCELLED' | 'NO_SHOW'
+  amount: number
+}
+
+export interface OutstandingPendingPlayerRecord {
+  playerPhoneNumber: string | null
+  playerName: string | null
+  pendingHours: number
+  pendingAmount: number
+  slots: OutstandingPendingSlot[]
+}
+
+export interface RevenueLossBucket {
+  lostHours: number
+  lostAmount: number
+  bookingCount: number
+}
+
+export interface RevenueLossOutput {
+  noShow: RevenueLossBucket
+  cancelled: RevenueLossBucket
+  fallbackAmountCount: number
+}
+
+export interface FinancialReportOutput {
+  summary: FinancialSummary
+  breakdown: {
+    paidEntries: PaymentBreakdownEntry[]
+    pendingEntries: PaymentBreakdownEntry[]
+  }
+  outstandingPending: {
+    players: OutstandingPendingPlayerRecord[]
+    totalOutstandingAmount: number
+  }
+  revenueLoss: RevenueLossOutput
+  reconciliation: {
+    paidAmountMatches: boolean
+    pendingAmountMatches: boolean
+    paidHoursMatches: boolean
+    pendingHoursMatches: boolean
+  }
+}

@@ -13,6 +13,7 @@ import AdminProtectedRoute from './features/auth/AdminProtectedRoute'
 import AdminLogin from './features/auth/AdminLogin'
 import AdminDashboardPage from './features/admin/AdminDashboardPage'
 import AdminCalendarPage from './features/admin/AdminCalendarPage'
+import AdminFinancialReportsPage from './features/admin/AdminFinancialReportsPage'
 
 // Public
 import PublicCalendarPage from './features/players/PublicCalendarPage'
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
           {
             path: 'settings',
             element: <AdminSettingsPage />
+          },
+          {
+            path: 'reports',
+            element: <AdminFinancialReportsPage />
           }
         ]
       }
