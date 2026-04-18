@@ -46,6 +46,12 @@ export interface PaidBreakdownModalState {
   pageSize: number
 }
 
+export interface PaginationControlState {
+  canGoPrevious: boolean
+  canGoNext: boolean
+  pageLabel: string
+}
+
 export interface OutstandingPendingSlot {
   bookingId: string
   startTime: string

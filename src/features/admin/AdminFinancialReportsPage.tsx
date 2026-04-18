@@ -39,7 +39,7 @@ export default function AdminFinancialReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Admin Financial Reports</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Financial Reports</h2>
         <p className="text-sm text-gray-500">Date-range financial report across all players. Player selection is not required.</p>
       </div>
 
@@ -110,11 +110,6 @@ export default function AdminFinancialReportsPage() {
             />
           </section>
 
-          <PaymentBreakdownSection
-            paidEntryCount={report.paidBreakdown.totalEntries}
-            onOpenPaidBreakdown={handleOpenPaidBreakdown}
-          />
-
           <OutstandingPendingSection
             players={report.outstandingPending.players}
             totalOutstandingAmount={report.outstandingPending.totalOutstandingAmount}
@@ -124,6 +119,11 @@ export default function AdminFinancialReportsPage() {
             noShow={report.revenueLoss.noShow}
             cancelled={report.revenueLoss.cancelled}
             fallbackAmountCount={report.revenueLoss.fallbackAmountCount}
+          />
+
+          <PaymentBreakdownSection
+            paidEntryCount={report.paidBreakdown.totalEntries}
+            onOpenPaidBreakdown={handleOpenPaidBreakdown}
           />
 
           <PaidBreakdownModal
