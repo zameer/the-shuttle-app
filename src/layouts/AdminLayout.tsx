@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink } from "react-router-dom";
-import { Settings, Menu, X } from 'lucide-react';
+import { Settings, Menu, X, BarChart3 } from 'lucide-react';
 import { useAuth } from "@/features/auth/useAuth";
 
 export default function AdminLayout() {
@@ -11,6 +11,7 @@ export default function AdminLayout() {
   const navItems = [
     { to: "/admin", label: "Dashboard", end: true },
     { to: "/admin/calendar", label: "Calendar", end: false },
+    { to: "/admin/reports", label: "Reports", icon: BarChart3, end: false },
     { to: "/admin/settings", label: "Settings", icon: Settings, end: false }
   ]
 
