@@ -33,6 +33,8 @@ Auto-generated from all feature plans. Last updated: 2026-04-18
 - Supabase PostgreSQL (existing `court_settings` + `bookings` reads only; no schema changes) (017-create-feature-branch)
 - TypeScript 6.0.2 with React 19.2.4 + React Query 5.99.0, Supabase 2.103.0, date-fns 4.1.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8, zod 4.x (018-enforce-player-endtime)
 - Supabase PostgreSQL with RLS (`bookings`, `players`, `admin_users` + existing `dashboard_metrics` view) (018-enforce-player-endtime)
+- TypeScript 6.0.2 with React 19.2.4 + React Query 5.99.0, Supabase 2.103.0, date-fns 4.1.0, Tailwind CSS 3.4.17, shadcn/ui dialog/button primitives, lucide-react 1.8, zod 4.x (019-admin-report-refinements)
+- Supabase PostgreSQL with RLS using existing `bookings`, `players`, and `admin_users` access patterns; no schema changes (019-admin-report-refinements)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -53,9 +55,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
+- 019-admin-report-refinements: Added TypeScript 6.0.2 with React 19.2.4 + React Query 5.99.0, Supabase 2.103.0, date-fns 4.1.0, Tailwind CSS 3.4.17, shadcn/ui dialog/button primitives, lucide-react 1.8, zod 4.x
 - 018-enforce-player-endtime: Added TypeScript 6.0.2 with React 19.2.4 + React Query 5.99.0, Supabase 2.103.0, date-fns 4.1.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8, zod 4.x
 - 017-create-feature-branch: Added TypeScript 6.0.2 with React 19.2.4 + date-fns 4.1.0, React Query 5.99.0, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8
-- 016-setup-feature-branch: Added TypeScript 6.0.2 with React 19.2.4 + date-fns 4.1.0, React Query 5.99.0, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8
 
 
 <!-- MANUAL ADDITIONS START -->

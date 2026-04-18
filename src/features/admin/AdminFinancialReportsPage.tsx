@@ -3,6 +3,7 @@ import { format, startOfMonth } from 'date-fns'
 import { Loader2 } from 'lucide-react'
 import { useFinancialReport } from '@/features/admin/financial-reports/useFinancialReport'
 import PaymentBreakdownSection from '@/features/admin/financial-reports/components/PaymentBreakdownSection'
+import PaidBreakdownModal from '@/features/admin/financial-reports/components/PaidBreakdownModal'
 import OutstandingPendingSection from '@/features/admin/financial-reports/components/OutstandingPendingSection'
 import RevenueImpactSection from '@/features/admin/financial-reports/components/RevenueImpactSection'
 
@@ -19,9 +20,21 @@ function SummaryCard({ title, value, subtitle }: { title: string; value: string;
 export default function AdminFinancialReportsPage() {
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [isPaidModalOpen, setIsPaidModalOpen] = useState(false)
+  const [paidPage, setPaidPage] = useState(1)
+  const paidPageSize = 8
 
   const reportInput = useMemo(() => ({ startDate, endDate }), [startDate, endDate])
   const { data: report, isLoading, error } = useFinancialReport(reportInput)
+
+  const paidEntries = report?.paidBreakdown.entries ?? []
+  const totalPaidPages = Math.max(1, Math.ceil(paidEntries.length / paidPageSize))
+  const activePaidPage = Math.min(Math.max(paidPage, 1), totalPaidPages)
+
+  const handleOpenPaidBreakdown = () => {
+    setPaidPage(1)
+    setIsPaidModalOpen(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -37,7 +50,10 @@ export default function AdminFinancialReportsPage() {
             <input
               type="date"
               value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
+              onChange={(event) => {
+                setStartDate(event.target.value)
+                setPaidPage(1)
+              }}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </label>
@@ -47,7 +63,10 @@ export default function AdminFinancialReportsPage() {
             <input
               type="date"
               value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
+              onChange={(event) => {
+                setEndDate(event.target.value)
+                setPaidPage(1)
+              }}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </label>
@@ -92,8 +111,8 @@ export default function AdminFinancialReportsPage() {
           </section>
 
           <PaymentBreakdownSection
-            paidEntries={report.breakdown.paidEntries}
-            pendingEntries={report.breakdown.pendingEntries}
+            paidEntryCount={report.paidBreakdown.totalEntries}
+            onOpenPaidBreakdown={handleOpenPaidBreakdown}
           />
 
           <OutstandingPendingSection
@@ -105,6 +124,16 @@ export default function AdminFinancialReportsPage() {
             noShow={report.revenueLoss.noShow}
             cancelled={report.revenueLoss.cancelled}
             fallbackAmountCount={report.revenueLoss.fallbackAmountCount}
+          />
+
+          <PaidBreakdownModal
+            open={isPaidModalOpen}
+            onOpenChange={setIsPaidModalOpen}
+            entries={report.paidBreakdown.entries}
+            currentPage={activePaidPage}
+            pageSize={paidPageSize}
+            onPageChange={setPaidPage}
+            summary={report.summary}
           />
         </>
       ) : (
