@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { AuthProvider } from './features/auth/useAuth'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 
 const queryClient = new QueryClient()
 
@@ -14,6 +15,8 @@ import AdminLogin from './features/auth/AdminLogin'
 import AdminDashboardPage from './features/admin/AdminDashboardPage'
 import AdminCalendarPage from './features/admin/AdminCalendarPage'
 import AdminFinancialReportsPage from './features/admin/AdminFinancialReportsPage'
+import BookingAgentConfigPage from './features/admin/booking-agents/BookingAgentConfigPage'
+import CallbackRequestsPage from './features/admin/callback-requests/CallbackRequestsPage'
 
 // Public
 import PublicCalendarPage from './features/players/PublicCalendarPage'
@@ -66,6 +69,14 @@ const router = createBrowserRouter([
           {
             path: 'reports',
             element: <AdminFinancialReportsPage />
+          },
+          {
+            path: 'booking-agents',
+            element: <BookingAgentConfigPage />
+          },
+          {
+            path: 'callback-requests',
+            element: <CallbackRequestsPage />
           }
         ]
       }
@@ -84,6 +95,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouterProvider router={router} />
+        <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
   )
