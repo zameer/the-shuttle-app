@@ -119,11 +119,6 @@ export default function PublicCalendarPage() {
         />
       )}
       
-      <div className="mt-6 w-full max-w-md rounded-lg bg-blue-50 p-4 text-center text-sm text-blue-800">
-        <p className="font-semibold mb-1">To reserve an available slot,</p>
-        <p>please contact our administrative staff directly via phone or WhatsApp.</p>
-      </div>
-
       <CallFAB
         availableAgentPhone={availableAgentPhone}
         isLoading={agentLoading}
