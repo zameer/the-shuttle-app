@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, addMonths, subMonths, addWeeks, subWeeks, startOfToday } from "date-fns";
+import { format, addMonths, subMonths, addWeeks, subWeeks, startOfToday, startOfWeek, startOfMonth, isBefore } from "date-fns";
 import { cn } from "@/lib/utils";
 import MonthView from "./MonthView";
 import WeekView from "./WeekView";
@@ -18,6 +18,7 @@ interface CalendarContainerProps {
   onSlotClick?: (date: Date, booking?: Booking) => void;
   readOnly?: boolean;
   isAdmin?: boolean;
+  minDate?: Date;
 }
 
 /**
@@ -36,6 +37,7 @@ export default function CalendarContainer({
   onSlotClick,
   readOnly = false,
   isAdmin = false,
+  minDate,
 }: CalendarContainerProps) {
   const next = () => {
     if (view === "month") {
@@ -45,7 +47,14 @@ export default function CalendarContainer({
     }
   };
 
+  const isPrevDisabled = minDate
+    ? view === "month"
+      ? isBefore(startOfMonth(subMonths(currentDate, 1)), startOfMonth(minDate))
+      : isBefore(startOfWeek(subWeeks(currentDate, 1)), startOfWeek(minDate))
+    : false;
+
   const prev = () => {
+    if (isPrevDisabled) return;
     if (view === "month") {
       onDateChange(subMonths(currentDate, 1));
     } else {
@@ -70,7 +79,10 @@ export default function CalendarContainer({
           <div className="flex items-center rounded-md bg-neutral-100 p-1 space-x-2 md:space-x-4">
             <button
               onClick={prev}
-              className="h-10 w-10 rounded-md text-neutral-600 transition-colors hover:bg-white md:h-8 md:w-8"
+              disabled={isPrevDisabled}
+              aria-disabled={isPrevDisabled}
+              aria-label="Previous period"
+              className="h-10 w-10 rounded-md text-neutral-600 transition-colors hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed md:h-8 md:w-8"
             >
               <ChevronLeft className="mx-auto h-5 w-5 md:h-4 md:w-4" />
             </button>

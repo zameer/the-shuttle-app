@@ -1,1 +1,3 @@
-{"feature_directory":"specs/021-route-callback-requests"}
+{
+	"feature_directory": "specs/022-call-choice-future-only"
+}

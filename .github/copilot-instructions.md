@@ -39,6 +39,8 @@ Auto-generated from all feature plans. Last updated: 2026-04-19
 - Supabase PostgreSQL with existing RLS model (no schema changes) (020-fix-paid-modal-ui)
 - TypeScript 6.0.2 + React 19.2.4, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8, date-fns 4.1.0 (021-route-callback-requests)
 - Supabase PostgreSQL with RLS — 2 new tables (`booking_agents`, `callback_requests`); 4 new RPC functions; `admin_users` extended with `is_super_admin` column (021-route-callback-requests)
+- TypeScript 6.0.2 + React 19.2.4, Tailwind CSS 3.4.17, lucide-react 1.8, date-fns 4.1.0, React Query 5.99.0, shadcn/ui (021-route-callback-requests)
+- N/A — no schema changes; existing `bookings` and `court_settings` reads only (021-route-callback-requests)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -59,9 +61,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
+- 021-route-callback-requests: Added TypeScript 6.0.2 + React 19.2.4, Tailwind CSS 3.4.17, lucide-react 1.8, date-fns 4.1.0, React Query 5.99.0, shadcn/ui
 - 021-route-callback-requests: Added TypeScript 6.0.2 + React 19.2.4, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Supabase 2.103.0, Tailwind CSS 3.4.17, shadcn/ui, lucide-react 1.8, date-fns 4.1.0
 - 020-fix-paid-modal-ui: Added TypeScript 6.0.2 with React 19.2.4 + React Query 5.99.0, Tailwind CSS 3.4.17, shadcn/ui dialog/button primitives, lucide-react 1.8
-- 019-admin-report-refinements: Added TypeScript 6.0.2 with React 19.2.4 + React Query 5.99.0, Supabase 2.103.0, date-fns 4.1.0, Tailwind CSS 3.4.17, shadcn/ui dialog/button primitives, lucide-react 1.8, zod 4.x
 
 
 <!-- MANUAL ADDITIONS START -->

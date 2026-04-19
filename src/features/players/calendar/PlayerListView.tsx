@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { format, isToday, isBefore } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Booking } from '@/features/booking/useBookings'
 import { deriveSlotRows } from './deriveSlotRows'
@@ -49,13 +49,18 @@ export default function PlayerListView({
   const scheduleEndTime = courtSettings?.court_close_time
   const rows = deriveSlotRows(currentDate, bookings, scheduleEndTime)
 
+  const now = new Date()
+  const visibleRows = isToday(currentDate)
+    ? rows.filter(row => !isBefore(row.slotEnd, now))
+    : rows
+
   return (
     <ul
       role="list"
       aria-label="Time slot availability"
       className="w-full divide-y divide-gray-100"
     >
-      {rows.map((row) => {
+      {visibleRows.map((row) => {
         const timeLabel = `${format(row.slotStart, 'h:mm a')} – ${format(row.slotEnd, 'h:mm a')}`
         const colorClass = STATUS_STYLES[row.status] ?? STATUS_STYLES.AVAILABLE
         const dotClass = STATUS_DOT[row.status] ?? STATUS_DOT.AVAILABLE

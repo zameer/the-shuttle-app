@@ -10,6 +10,8 @@ export function useNextAvailableAgent() {
       return (data as string | null) ?? null
     },
     staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   })
 
   return { phone: data ?? null, isLoading }

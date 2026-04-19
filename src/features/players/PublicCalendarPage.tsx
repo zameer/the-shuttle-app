@@ -5,7 +5,7 @@ import type { CalendarView } from '@/components/shared/calendar/CalendarContaine
 import PlayerListView from '@/features/players/calendar/PlayerListView'
 import ListDateNav from '@/features/players/calendar/ListDateNav'
 import { usePublicBookings } from './usePublicBookings'
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns'
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, startOfToday } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
 import { useNextAvailableAgent } from './call/useNextAvailableAgent'
 import CallFAB from './call/CallFAB'
@@ -24,7 +24,7 @@ type DisplayMode = 'calendar' | 'list'
  * - Responsive container sizing with mobile-first padding and viewport-height calendar
  */
 export default function PublicCalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState(startOfToday())
   const [view, setView] = useState<CalendarView>('week')
   // FR-002: list view is the default display mode on page load
   const [displayMode, setDisplayMode] = useState<DisplayMode>('list')
@@ -41,6 +41,8 @@ export default function PublicCalendarPage() {
     }
     return { startDate: startOfWeek(currentDate), endDate: endOfWeek(currentDate) }
   }, [currentDate, view, displayMode])
+
+  const today = startOfToday()
 
   const { data: rawBookings = [], isLoading } = usePublicBookings(startDate, endDate)
 
@@ -96,7 +98,7 @@ export default function PublicCalendarPage() {
         <div className="h-[68vh] w-full animate-pulse rounded-lg border bg-white shadow-sm md:h-[72vh]" />
       ) : displayMode === 'list' ? (
         <div className="w-full">
-          <ListDateNav value={currentDate} onChange={setCurrentDate} />
+          <ListDateNav value={currentDate} onChange={setCurrentDate} minDate={today} />
           <PlayerListView
             currentDate={currentDate}
             bookings={secureBookings as Booking[]}
@@ -113,6 +115,7 @@ export default function PublicCalendarPage() {
           bookings={secureBookings as Booking[]}
           readOnly={true}
           isAdmin={false}
+          minDate={today}
         />
       )}
       
