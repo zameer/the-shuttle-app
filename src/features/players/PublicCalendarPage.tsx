@@ -7,6 +7,9 @@ import ListDateNav from '@/features/players/calendar/ListDateNav'
 import { usePublicBookings } from './usePublicBookings'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
+import { useNextAvailableAgent } from './call/useNextAvailableAgent'
+import CallFAB from './call/CallFAB'
+import CallbackRequestModal from './call/CallbackRequestModal'
 
 type DisplayMode = 'calendar' | 'list'
 
@@ -25,6 +28,9 @@ export default function PublicCalendarPage() {
   const [view, setView] = useState<CalendarView>('week')
   // FR-002: list view is the default display mode on page load
   const [displayMode, setDisplayMode] = useState<DisplayMode>('list')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const { phone: availableAgentPhone, isLoading: agentLoading } = useNextAvailableAgent()
 
   const { startDate, endDate } = useMemo(() => {
     if (displayMode === 'list') {
@@ -51,7 +57,6 @@ export default function PublicCalendarPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-full flex-col items-center px-2 sm:px-4 lg:px-6 min-h-[78vh]">
-      {/* Display-mode toggle */}
       <div className="flex w-full justify-end mb-2">
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 gap-0.5" role="group" aria-label="View mode">
           <button
@@ -115,6 +120,13 @@ export default function PublicCalendarPage() {
         <p className="font-semibold mb-1">To reserve an available slot,</p>
         <p>please contact our administrative staff directly via phone or WhatsApp.</p>
       </div>
+
+      <CallFAB
+        availableAgentPhone={availableAgentPhone}
+        isLoading={agentLoading}
+        onRequestCallback={() => setIsModalOpen(true)}
+      />
+      <CallbackRequestModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }
