@@ -52,3 +52,35 @@ export interface CallbackRequest {
   created_at: string
   updated_at: string
 }
+
+// ---------------------------------------------------------------------------
+// PWA / offline capture types (Feature 023)
+// ---------------------------------------------------------------------------
+
+export type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'offline-queued' | 'error'
+
+export interface CallbackCaptureDraft {
+  playerName?: string
+  playerPhone?: string
+  slotFrom?: string
+  slotTo?: string
+  playerLocation?: string
+  preferredCallbackTime?: string
+  note?: string
+  savedAt: string
+  expiresAt: string
+}
+
+export interface CallbackCapturePreferences {
+  preferredCallbackTime?: string
+}
+
+export interface PendingCallbackItem {
+  clientId: string
+  payload: CallbackRequestFormValues
+  queuedAt: string
+}
+
+export type PendingCallbackQueue = PendingCallbackItem[]
+
+export type SubmittedIdLog = string[]

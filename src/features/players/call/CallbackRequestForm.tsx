@@ -1,23 +1,69 @@
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { callbackRequestSchema, type CallbackRequestFormValues, type SubmitCallbackResult } from './types'
+import { Info } from 'lucide-react'
+import { callbackRequestSchema, type CallbackRequestFormValues } from './types'
+import type { SubmissionStatus } from './types'
 import { useSubmitCallbackRequest } from './useSubmitCallbackRequest'
-import { Info, CheckCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useCallbackDraft } from './useCallbackDraft'
+import { useCallbackPreferences } from './useCallbackPreferences'
+import { useOfflineCallbackQueue } from './useOfflineCallbackQueue'
+import CallbackCaptureStep1 from './CallbackCaptureStep1'
+import CallbackCaptureStep2 from './CallbackCaptureStep2'
+import CallbackCaptureStep3 from './CallbackCaptureStep3'
+import CallbackSuccessView from './CallbackSuccessView'
 
-interface CallbackRequestFormProps {
-  onSuccess?: (result: SubmitCallbackResult) => void
+type CaptureStep = 1 | 2 | 3
+
+interface StepProgressProps {
+  step: CaptureStep
 }
 
-export default function CallbackRequestForm({ onSuccess }: CallbackRequestFormProps) {
-  const [successResult, setSuccessResult] = useState<SubmitCallbackResult | null>(null)
+function StepProgress({ step }: StepProgressProps) {
+  return (
+    <div className="flex items-center justify-center gap-2 py-1" aria-label={`Step ${step} of 3`}>
+      {([1, 2, 3] as CaptureStep[]).map((s) => (
+        <span
+          key={s}
+          className={`h-2 rounded-full transition-all ${
+            s === step
+              ? 'w-6 bg-blue-600'
+              : s < step
+              ? 'w-2 bg-blue-300'
+              : 'w-2 bg-gray-300'
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
+interface CallbackRequestFormProps {
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+export default function CallbackRequestForm({ onSuccess, onCancel }: CallbackRequestFormProps) {
+  const [step, setStep] = useState<CaptureStep>(1)
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>('idle')
+  const [assignedAgentEmail, setAssignedAgentEmail] = useState<string | null>(null)
+  const [clientId, setClientId] = useState<string>(() => crypto.randomUUID())
+  const [showDraftBanner, setShowDraftBanner] = useState(true)
+
   const submitMutation = useSubmitCallbackRequest()
+  const { draft, saveDraft, clearDraft, hasDraft } = useCallbackDraft()
+  const { preferences, savePreferences } = useCallbackPreferences()
+  const { enqueue, isAlreadySubmitted, markSubmitted, pendingCount } = useOfflineCallbackQueue()
+
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     register,
     handleSubmit,
+    trigger,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<CallbackRequestFormValues>({
     resolver: zodResolver(callbackRequestSchema),
     defaultValues: {
@@ -26,173 +72,168 @@ export default function CallbackRequestForm({ onSuccess }: CallbackRequestFormPr
       slotFrom: '',
       slotTo: '',
       playerLocation: '',
-      preferredCallbackTime: '',
+      preferredCallbackTime: preferences.preferredCallbackTime ?? '',
       note: '',
     },
   })
 
-  const onSubmit = async (values: CallbackRequestFormValues) => {
-    const result = await submitMutation.mutateAsync(values)
-    setSuccessResult(result)
-    reset()
-    onSuccess?.(result)
+  // ── Draft save (debounced 500 ms) ────────────────────────────────────────
+  const scheduleDraftSave = () => {
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    draftTimerRef.current = setTimeout(() => {
+      saveDraft(getValues())
+    }, 500)
   }
 
-  if (successResult) {
+  // ── Draft restoration ────────────────────────────────────────────────────
+  const handleRestoreDraft = () => {
+    if (!draft) return
+    const fields = [
+      'playerName', 'playerPhone', 'slotFrom', 'slotTo',
+      'playerLocation', 'preferredCallbackTime', 'note',
+    ] as const
+    fields.forEach((field) => {
+      if (draft[field] !== undefined) {
+        setValue(field, draft[field] as string)
+      }
+    })
+    setShowDraftBanner(false)
+  }
+
+  // ── Step navigation ──────────────────────────────────────────────────────
+  const handleNextStep1 = async () => {
+    const valid = await trigger(['playerName', 'playerPhone'])
+    if (!valid) return
+    scheduleDraftSave()
+    setStep(2)
+  }
+
+  const handleNextStep2 = async () => {
+    const valid = await trigger(['slotFrom', 'slotTo', 'playerLocation'])
+    if (!valid) return
+    scheduleDraftSave()
+    setStep(3)
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  const onSubmit = async (values: CallbackRequestFormValues) => {
+    if (isAlreadySubmitted(clientId)) return
+
+    setSubmissionStatus('submitting')
+    try {
+      const result = await submitMutation.mutateAsync({ values, clientId })
+      markSubmitted(clientId)
+      clearDraft()
+      if (values.preferredCallbackTime) {
+        savePreferences({ preferredCallbackTime: values.preferredCallbackTime })
+      }
+      setAssignedAgentEmail(result.assigned_agent_email)
+      setSubmissionStatus('success')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : ''
+      if (message === 'network-offline' || !navigator.onLine) {
+        enqueue(values, clientId)
+        setClientId(crypto.randomUUID()) // fresh id for any retry
+        setSubmissionStatus('offline-queued')
+      } else {
+        setSubmissionStatus('error')
+      }
+    }
+  }
+
+  // ── Success / offline-queued / error views ───────────────────────────────
+  if (submissionStatus === 'success' || submissionStatus === 'offline-queued') {
     return (
-      <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <CheckCircle className="h-12 w-12 text-green-500" />
-        {successResult.status === 'assigned' ? (
-          <>
-            <p className="text-base font-semibold text-gray-900">Request received — agent assigned!</p>
-            <p className="text-sm text-gray-600">
-              A Booking Agent has been assigned and will call you back at the number you provided.
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-base font-semibold text-gray-900">Request received!</p>
-            <p className="text-sm text-gray-600">
-              No agents are currently available. Your request is in the queue and a Booking Agent will call you back soon.
-            </p>
-          </>
-        )}
-      </div>
+      <CallbackSuccessView
+        status={submissionStatus}
+        assignedAgentEmail={assignedAgentEmail}
+        pendingCount={pendingCount}
+        onClose={() => onSuccess?.()}
+      />
     )
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      {/* Rules reminder banner */}
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-4 flex-1 min-h-0"
+    >
+      {/* Flow guidance banner */}
       <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
-          Please review our{' '}
-          <a href="/terms" className="underline hover:text-blue-900" target="_blank" rel="noreferrer">
-            court rules and terms
-          </a>{' '}
-          before booking.
+          Share your details in three short steps and we will arrange your callback.
         </span>
       </div>
 
-      {/* Player name */}
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700" htmlFor="cb-player-name">
-          Your name <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="cb-player-name"
-          type="text"
-          autoComplete="name"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          {...register('playerName')}
-        />
-        {errors.playerName && <p className="text-xs text-red-500">{errors.playerName.message}</p>}
-      </div>
+      {/* Step progress */}
+      <StepProgress step={step} />
 
-      {/* Phone */}
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700" htmlFor="cb-player-phone">
-          Your phone number <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="cb-player-phone"
-          type="tel"
-          autoComplete="tel"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          {...register('playerPhone')}
-        />
-        {errors.playerPhone && <p className="text-xs text-red-500">{errors.playerPhone.message}</p>}
-      </div>
-
-      {/* Slot from / to */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700" htmlFor="cb-slot-from">
-            Slot start <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="cb-slot-from"
-            type="datetime-local"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            {...register('slotFrom')}
-          />
-          {errors.slotFrom && <p className="text-xs text-red-500">{errors.slotFrom.message}</p>}
+      {/* Draft restoration banner */}
+      {hasDraft && showDraftBanner && step === 1 && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+          <span className="text-amber-800">Continue from last time?</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleRestoreDraft}
+              className="text-xs font-medium text-amber-800 underline hover:text-amber-900"
+            >
+              Restore
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDraftBanner(false)}
+              className="text-xs font-medium text-gray-500 hover:text-gray-700"
+            >
+              Start fresh
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700" htmlFor="cb-slot-to">
-            Slot end <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="cb-slot-to"
-            type="datetime-local"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            {...register('slotTo')}
-          />
-          {errors.slotTo && <p className="text-xs text-red-500">{errors.slotTo.message}</p>}
-        </div>
-      </div>
+      )}
 
-      {/* Location */}
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700" htmlFor="cb-location">
-          Your location <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="cb-location"
-          type="text"
-          placeholder="e.g. Masjid Mawatha, Kal-Eliya"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          {...register('playerLocation')}
-        />
-        {errors.playerLocation && <p className="text-xs text-red-500">{errors.playerLocation.message}</p>}
-      </div>
-
-      {/* Preferred callback time (optional) */}
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700" htmlFor="cb-preferred-time">
-          Preferred callback time <span className="text-gray-400 text-xs">(optional)</span>
-        </label>
-        <input
-          id="cb-preferred-time"
-          type="text"
-          placeholder="e.g. after 3pm, anytime"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          {...register('preferredCallbackTime')}
-        />
-        {errors.preferredCallbackTime && (
-          <p className="text-xs text-red-500">{errors.preferredCallbackTime.message}</p>
-        )}
-      </div>
-
-      {/* Note (optional) */}
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700" htmlFor="cb-note">
-          Additional note <span className="text-gray-400 text-xs">(optional)</span>
-        </label>
-        <textarea
-          id="cb-note"
-          rows={3}
-          placeholder="Any other information for the agent"
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
-          {...register('note')}
-        />
-        {errors.note && <p className="text-xs text-red-500">{errors.note.message}</p>}
-      </div>
-
-      {submitMutation.isError && (
-        <p className="text-sm text-red-600">
+      {/* Error banner */}
+      {submissionStatus === 'error' && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           Something went wrong. Please try again.
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={isSubmitting || submitMutation.isPending}
-        className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-      >
-        {submitMutation.isPending ? 'Submitting…' : 'Submit Callback Request'}
-      </button>
+      {/* Step content */}
+      {step === 1 && (
+        <CallbackCaptureStep1
+          register={register}
+          errors={errors}
+          onNext={handleNextStep1}
+          onCancel={() => onCancel?.()}
+          disabled={isSubmitting}
+        />
+      )}
+      {step === 2 && (
+        <CallbackCaptureStep2
+          register={register}
+          errors={errors}
+          onNext={handleNextStep2}
+          onBack={() => setStep(1)}
+          disabled={isSubmitting}
+        />
+      )}
+      {step === 3 && (
+        <CallbackCaptureStep3
+          register={register}
+          errors={errors}
+          reviewValues={{
+            playerName: getValues('playerName'),
+            playerPhone: getValues('playerPhone'),
+            slotFrom: getValues('slotFrom'),
+            slotTo: getValues('slotTo'),
+            playerLocation: getValues('playerLocation'),
+          }}
+          isSubmitting={isSubmitting}
+          disabled={isSubmitting}
+          onBack={() => setStep(2)}
+        />
+      )}
     </form>
   )
 }

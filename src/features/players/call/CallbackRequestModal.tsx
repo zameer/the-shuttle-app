@@ -14,11 +14,11 @@ interface CallbackRequestModalProps {
 export default function CallbackRequestModal({ isOpen, onClose }: CallbackRequestModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => { if (!open) onClose() }}>
-      <DialogContent className="w-full max-w-full sm:max-w-lg overflow-y-auto max-h-[90vh]" showCloseButton>
+      <DialogContent className="w-full max-w-full h-dvh sm:max-w-lg sm:h-auto rounded-none sm:rounded-xl" showCloseButton>
         <DialogHeader>
           <DialogTitle>Request Callback</DialogTitle>
         </DialogHeader>
-        <CallbackRequestForm onSuccess={onClose} />
+        <CallbackRequestForm onSuccess={onClose} onCancel={onClose} />
       </DialogContent>
     </Dialog>
   )
