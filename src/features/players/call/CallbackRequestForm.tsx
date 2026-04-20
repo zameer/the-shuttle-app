@@ -141,7 +141,7 @@ export default function CallbackRequestForm({ onSuccess }: CallbackRequestFormPr
         <input
           id="cb-location"
           type="text"
-          placeholder="e.g. Court 1, Hall B"
+          placeholder="e.g. Masjid Mawatha, Kal-Eliya"
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           {...register('playerLocation')}
         />
