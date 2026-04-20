@@ -36,6 +36,20 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
+            // Callback RPC — NetworkOnly with BackgroundSync so offline submissions
+            // are retried automatically when connectivity returns.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/rpc\/submit_callback_request/i,
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'callback-requests',
+                options: {
+                  maxRetentionTime: 24 * 60
+                }
+              }
+            }
+          },
+          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {

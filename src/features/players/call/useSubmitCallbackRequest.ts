@@ -9,11 +9,20 @@ const submitResultSchema = z.object({
   assigned_agent_email: z.string().nullable(),
 })
 
+export interface SubmitCallbackInput {
+  values: CallbackRequestFormValues
+  clientId: string
+}
+
 export function useSubmitCallbackRequest() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (values: CallbackRequestFormValues): Promise<SubmitCallbackResult> => {
+    mutationFn: async ({ values }: SubmitCallbackInput): Promise<SubmitCallbackResult> => {
+      if (!navigator.onLine) {
+        throw new Error('network-offline')
+      }
+
       const { data, error } = await supabase.rpc('submit_callback_request', {
         p_player_name: values.playerName,
         p_player_phone: values.playerPhone,

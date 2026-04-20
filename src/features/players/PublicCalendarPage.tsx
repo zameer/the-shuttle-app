@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { LayoutList, CalendarDays } from 'lucide-react'
+import { LayoutList, CalendarDays, X } from 'lucide-react'
 import CalendarContainer from '@/components/shared/calendar/CalendarContainer'
 import type { CalendarView } from '@/components/shared/calendar/CalendarContainer'
 import PlayerListView from '@/features/players/calendar/PlayerListView'
@@ -10,6 +10,7 @@ import type { Booking } from '@/features/booking/useBookings'
 import { useNextAvailableAgent } from './call/useNextAvailableAgent'
 import CallFAB from './call/CallFAB'
 import CallbackRequestModal from './call/CallbackRequestModal'
+import { usePWAInstallPrompt } from '@/hooks/usePWAInstallPrompt'
 
 type DisplayMode = 'calendar' | 'list'
 
@@ -31,6 +32,7 @@ export default function PublicCalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { phone: availableAgentPhone, isLoading: agentLoading } = useNextAvailableAgent()
+  const { canInstall, triggerInstall, dismissInstall } = usePWAInstallPrompt()
 
   const { startDate, endDate } = useMemo(() => {
     if (displayMode === 'list') {
@@ -59,6 +61,29 @@ export default function PublicCalendarPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-full flex-col items-center px-2 sm:px-4 lg:px-6 min-h-[78vh]">
+      {/* PWA install banner — shown after 2nd visit when installable */}
+      {canInstall && (
+        <div className="mb-2 flex w-full items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+          <span className="text-blue-800 font-medium">Add to Home Screen for quick access</span>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void triggerInstall()}
+              className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+            >
+              Install
+            </button>
+            <button
+              type="button"
+              onClick={dismissInstall}
+              aria-label="Dismiss install prompt"
+              className="text-blue-600 hover:text-blue-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex w-full justify-end mb-2">
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 gap-0.5" role="group" aria-label="View mode">
           <button
