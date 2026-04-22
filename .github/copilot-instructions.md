@@ -1,6 +1,6 @@
 ﻿# the-shuttle-ksc Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-20
+Auto-generated from all feature plans. Last updated: 2026-04-22
 
 ## Active Technologies
 - TypeScript 6.0.2 with React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, react-hook-form 7.72.1, date-fns 4.1.0, lucide-react 1.8 (003-ui-improvements)
@@ -45,6 +45,11 @@ Auto-generated from all feature plans. Last updated: 2026-04-20
 - Supabase PostgreSQL (existing RLS, no schema changes) + browser `localStorage` for draft/preference persistence (023-new-speckit-spec)
 - TypeScript 6.0.2, React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Supabase JS 2.103.0, date-fns 4.1.0, lucide-react 1.8, vite-plugin-pwa 1.2.x (023-new-speckit-spec)
 - Supabase PostgreSQL (existing RPC/table), browser localStorage, Workbox BackgroundSync queue (023-new-speckit-spec)
+- TypeScript 6.0.2 + React 19.2.4, Vite 8.0, React Query 5.99.0, Tailwind CSS 3.4.17, date-fns 4.1.0, shadcn/ui primitives (024-setup-specify-invocation)
+- Supabase PostgreSQL (existing `bookings`, `court_settings`, `recurring_unavailable_blocks`) (024-setup-specify-invocation)
+- TypeScript 6.0.2 + React 19.2.4, React Query 5.99.0, date-fns 4.1.0, Supabase 2.103.0 (024-setup-specify-invocation)
+- Supabase PostgreSQL -- read-only; existing `bookings`, `court_settings`, (024-setup-specify-invocation)
+- TypeScript 6.0.2, React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, Supabase JS 2.103.0, date-fns 4.1.0, lucide-react 1.8 (024-setup-specify-invocation)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -65,9 +70,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
-- 023-new-speckit-spec: Added TypeScript 6.0.2, React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Supabase JS 2.103.0, date-fns 4.1.0, lucide-react 1.8, vite-plugin-pwa 1.2.x
-- 023-new-speckit-spec: Added TypeScript 6.0.2 + React 19.2.4, Tailwind CSS 3.4.17, shadcn/ui, react-hook-form 7.72.1, Zod 4.x, lucide-react 1.8, date-fns 4.1.0
-- 021-route-callback-requests: Added TypeScript 6.0.2 + React 19.2.4, Tailwind CSS 3.4.17, lucide-react 1.8, date-fns 4.1.0, React Query 5.99.0, shadcn/ui
+- 024-setup-specify-invocation: Added TypeScript 6.0.2, React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, Supabase JS 2.103.0, date-fns 4.1.0, lucide-react 1.8
+- 024-setup-specify-invocation: Added TypeScript 6.0.2 + React 19.2.4, React Query 5.99.0, date-fns 4.1.0, Supabase 2.103.0
+- 024-setup-specify-invocation: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, React Query 5.99.0, Tailwind CSS 3.4.17, date-fns 4.1.0, shadcn/ui primitives
 
 
 <!-- MANUAL ADDITIONS START -->

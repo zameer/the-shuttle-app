@@ -11,6 +11,7 @@ import { useNextAvailableAgent } from './call/useNextAvailableAgent'
 import CallFAB from './call/CallFAB'
 import CallbackRequestModal from './call/CallbackRequestModal'
 import { usePWAInstallPrompt } from '@/hooks/usePWAInstallPrompt'
+import { useRecurringBlocks } from '@/features/admin/useCourtSettings'
 
 type DisplayMode = 'calendar' | 'list'
 
@@ -47,6 +48,7 @@ export default function PublicCalendarPage() {
   const today = startOfToday()
 
   const { data: rawBookings = [], isLoading } = usePublicBookings(startDate, endDate)
+  const { data: recurringRules = [] } = useRecurringBlocks()
 
   // Map to the shared calendar interface securely without PII
   // Strip all sensitive data: player names/phone, payment info, rates
@@ -127,6 +129,7 @@ export default function PublicCalendarPage() {
           <PlayerListView
             currentDate={currentDate}
             bookings={secureBookings as Booking[]}
+            recurringRules={recurringRules}
             readOnly={true}
             isAdmin={false}
           />

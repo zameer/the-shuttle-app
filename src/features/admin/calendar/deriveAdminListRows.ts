@@ -1,6 +1,12 @@
-import { addMinutes, isBefore, parseISO, setHours, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns'
+import { isBefore, startOfDay } from 'date-fns'
 import type { Booking } from '@/features/booking/useBookings'
 import { normalizePaymentStatus, type NormalizedPaymentStatus } from '@/features/booking/paymentStatus'
+import {
+  composeAvailabilitySegments,
+  createScheduleWindow,
+  type RecurringRuleInput,
+} from '@/features/calendar/availability'
+import type { ComposedSegment } from '@/features/calendar/availability/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,20 +31,32 @@ export interface AdminListRow {
 // Constants
 // ---------------------------------------------------------------------------
 
-const SCHEDULE_START_HOUR = 6
 const SCHEDULE_END_HOUR = 22
-const SLOT_STEP_MINUTES = 60
+const SCHEDULE_START_HOUR = 6
+const SLOT_DURATION_MS = 60 * 60 * 1000
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function toScheduleStart(date: Date): Date {
-  return setMilliseconds(setSeconds(setMinutes(setHours(date, SCHEDULE_START_HOUR), 0), 0), 0)
-}
-
-function toScheduleHour(date: Date, hour: number): Date {
-  return setMilliseconds(setSeconds(setMinutes(setHours(date, hour), 0), 0), 0)
+function expandGapTo60MinSlots(segments: ComposedSegment[]): ComposedSegment[] {
+  const result: ComposedSegment[] = []
+  for (const segment of segments) {
+    if (segment.source !== 'gap') {
+      result.push(segment)
+      continue
+    }
+    let cursor = segment.segmentStart.getTime()
+    while (cursor < segment.segmentEnd.getTime()) {
+      result.push({
+        ...segment,
+        segmentStart: new Date(cursor),
+        segmentEnd: new Date(cursor + SLOT_DURATION_MS),
+      })
+      cursor += SLOT_DURATION_MS
+    }
+  }
+  return result
 }
 
 // ---------------------------------------------------------------------------
@@ -59,111 +77,37 @@ export function deriveAdminListRows(
   date: Date,
   bookings: Booking[],
   scheduleEndHour: number = SCHEDULE_END_HOUR,
+  recurringRules: RecurringRuleInput[] = [],
 ): AdminListRow[] {
-  const scheduleStart = toScheduleStart(date)
-  const scheduleEnd = toScheduleHour(date, scheduleEndHour)
+  const window = createScheduleWindow(date, {
+    startHour: SCHEDULE_START_HOUR,
+    endHour: scheduleEndHour,
+  })
+
+  const composedSegments = composeAvailabilitySegments({
+    date,
+    bookings,
+    recurringRules,
+    window,
+  })
+
+  const expandedSegments = expandGapTo60MinSlots(composedSegments)
+
   const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()))
 
-  // Filter to bookings that overlap the schedule window and sort ascending
-  const dayBookings = bookings
-    .filter((b) => {
-      const bStart = parseISO(b.start_time)
-      const bEnd = parseISO(b.end_time)
-      return bStart < scheduleEnd && bEnd > scheduleStart
-    })
-    .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime())
-
-  const rows: AdminListRow[] = []
-  let cursor = scheduleStart
-
-  for (const booking of dayBookings) {
-    const bStart = parseISO(booking.start_time)
-    const bEnd = parseISO(booking.end_time)
-
-    // Clamp start to schedule window start (early bookings begin at 06:00 display start).
-    // Do NOT clamp end: bookings that extend beyond the schedule window must remain
-    // fully visible to match calendar view behaviour (US2 016).
-    const effectiveBStart = bStart < scheduleStart ? scheduleStart : bStart
-    const effectiveBEnd = bEnd
-
-    // Fill 60-min available rows between cursor and booking start
-    while (addMinutes(cursor, SLOT_STEP_MINUTES) <= effectiveBStart) {
-      const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
-      if (!isPastDate) {
-        rows.push({
-          type: 'available',
-          slotStart: cursor,
-          slotEnd,
-          durationMinutes: SLOT_STEP_MINUTES,
-          status: 'AVAILABLE',
-          actionable: true,
-        })
-      }
-      cursor = slotEnd
-    }
-
-    // Emit partial gap row if remaining time before booking is < 60 min
-    if (!isPastDate && cursor < effectiveBStart) {
-      const partialDuration = (effectiveBStart.getTime() - cursor.getTime()) / 60000
-      rows.push({
-        type: 'available',
-        slotStart: cursor,
-        slotEnd: effectiveBStart,
-        durationMinutes: partialDuration,
-        status: 'AVAILABLE',
-        actionable: true,
-      })
-      cursor = effectiveBStart
-    }
-
-    // Emit one merged booking row
-    const durationMinutes = (effectiveBEnd.getTime() - effectiveBStart.getTime()) / 60000
-    rows.push({
-      type: 'booking',
-      slotStart: effectiveBStart,
-      slotEnd: effectiveBEnd,
-      durationMinutes,
-      status: booking.status,
-      booking,
-      playerName: booking.player_name ?? null,
-      paymentStatus: normalizePaymentStatus(booking.payment_status),
-      actionable: true,
-    })
-
-    // Advance cursor past this booking
-    if (effectiveBEnd > cursor) {
-      cursor = effectiveBEnd
-    }
-  }
-
-  // Fill remaining 60-min available slots after the last booking
-  while (addMinutes(cursor, SLOT_STEP_MINUTES) <= scheduleEnd) {
-    const slotEnd = addMinutes(cursor, SLOT_STEP_MINUTES)
-    if (!isPastDate) {
-      rows.push({
-        type: 'available',
-        slotStart: cursor,
-        slotEnd,
-        durationMinutes: SLOT_STEP_MINUTES,
-        status: 'AVAILABLE',
-        actionable: true,
-      })
-    }
-    cursor = slotEnd
-  }
-
-  // Emit partial trailing gap if any unbooked time remains before schedule end
-  if (!isPastDate && cursor < scheduleEnd) {
-    const partialDuration = (scheduleEnd.getTime() - cursor.getTime()) / 60000
-    rows.push({
-      type: 'available',
-      slotStart: cursor,
-      slotEnd: scheduleEnd,
-      durationMinutes: partialDuration,
-      status: 'AVAILABLE',
-      actionable: true,
-    })
-  }
-
-  return rows
+  return expandedSegments
+    .filter((segment) => !isPastDate || segment.status !== 'AVAILABLE')
+    .map((segment) => ({
+      type: segment.status === 'AVAILABLE' ? 'available' : 'booking',
+      slotStart: segment.segmentStart,
+      slotEnd: segment.segmentEnd,
+      durationMinutes: (segment.segmentEnd.getTime() - segment.segmentStart.getTime()) / 60000,
+      status: segment.status,
+      booking: segment.booking,
+      playerName: segment.booking?.player_name ?? null,
+      paymentStatus: segment.booking
+        ? normalizePaymentStatus(segment.booking.payment_status)
+        : undefined,
+      actionable: segment.actionable,
+    }))
 }
