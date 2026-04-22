@@ -101,6 +101,8 @@ Extended behavior:
 - Recurring-block rows must have `actionable: false` (D10, FR-011).
 - Player list rows must be clamped to configured schedule boundaries (FR-013, D11).
 - If player final AVAILABLE slot crosses `scheduleEnd`, truncate row end to `scheduleEnd` (FR-014, D11).
+- Derived list rows must never overlap; each row start must be `>=` previous row end (FR-015, D12).
+- If overlap prevention leaves a short trailing AVAILABLE remainder, merge it into the previous contiguous AVAILABLE row (FR-015, D12).
 
 ---
 

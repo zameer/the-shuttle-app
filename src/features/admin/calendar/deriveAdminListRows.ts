@@ -46,14 +46,38 @@ function expandGapTo60MinSlots(segments: ComposedSegment[]): ComposedSegment[] {
       result.push(segment)
       continue
     }
+
+    const gapEndMs = segment.segmentEnd.getTime()
     let cursor = segment.segmentStart.getTime()
-    while (cursor < segment.segmentEnd.getTime()) {
+
+    while (cursor + SLOT_DURATION_MS <= gapEndMs) {
       result.push({
         ...segment,
         segmentStart: new Date(cursor),
         segmentEnd: new Date(cursor + SLOT_DURATION_MS),
       })
       cursor += SLOT_DURATION_MS
+    }
+
+    // FR-015: avoid rendering a separate overlapping tail row. Merge short
+    // remainder into the previous available slot when contiguous.
+    if (cursor < gapEndMs) {
+      const previous = result[result.length - 1]
+      const canMergeRemainder =
+        previous &&
+        previous.source === 'gap' &&
+        previous.status === 'AVAILABLE' &&
+        previous.segmentEnd.getTime() === cursor
+
+      if (canMergeRemainder) {
+        previous.segmentEnd = new Date(gapEndMs)
+      } else {
+        result.push({
+          ...segment,
+          segmentStart: new Date(cursor),
+          segmentEnd: new Date(gapEndMs),
+        })
+      }
     }
   }
   return result

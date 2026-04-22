@@ -45,6 +45,8 @@ interface RecurringParityRow {
 4. Gap rows (`AVAILABLE`) may not overlap any CONFIRMED/PENDING/UNAVAILABLE interval.
 5. All AVAILABLE list rows must have `durationMinutes === 60`, except the final player boundary-clamped row which may be shorter due to FR-014.
 6. Player list rows must remain fully inside configured schedule window boundaries (FR-013).
+7. Neither player nor admin list output may contain overlapping rows (FR-015).
+8. When overlap prevention leaves a short trailing AVAILABLE fragment, merge it into the immediately previous contiguous AVAILABLE row (FR-015).
 
 ## Error Handling
 
