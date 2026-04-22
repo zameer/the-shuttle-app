@@ -6,6 +6,7 @@ import { deriveAdminListRows } from '@/features/admin/calendar/deriveAdminListRo
 import { BOOKING_STATUS_DOT_CLASS, BOOKING_STATUS_LABEL, BOOKING_STATUS_ROW_CLASS } from '@/features/booking/bookingStatusMeta'
 import { useCourtSettings } from '@/features/admin/useCourtSettings'
 import { getPaymentStatusLabel, getPaymentStatusPillClassName } from '@/features/booking/paymentStatus'
+import type { RecurringRuleInput } from '@/features/calendar/availability'
 
 // Parse "HH:MM:SS" or "HH:MM" -> decimal hours (e.g. "22:30:00" -> 22.5)
 function timeStrToHours(t: string): number {
@@ -16,6 +17,7 @@ function timeStrToHours(t: string): number {
 interface AdminListViewProps {
   currentDate: Date
   bookings: Booking[]
+  recurringRules?: RecurringRuleInput[]
   onBookingClick: (booking: Booking) => void
   onAvailableSlotClick: (date: Date) => void
   onAddBooking: (date: Date) => void
@@ -32,6 +34,7 @@ function formatDuration(minutes: number): string {
 export default function AdminListView({
   currentDate,
   bookings,
+  recurringRules = [],
   onBookingClick,
   onAvailableSlotClick,
   onAddBooking,
@@ -40,7 +43,7 @@ export default function AdminListView({
   const scheduleEndHour = courtSettings
     ? Math.ceil(timeStrToHours(courtSettings.court_close_time))
     : undefined
-  const rows = deriveAdminListRows(currentDate, bookings, scheduleEndHour)
+  const rows = deriveAdminListRows(currentDate, bookings, scheduleEndHour, recurringRules)
   const isPastDate = isBefore(startOfDay(currentDate), startOfDay(new Date()))
 
   return (

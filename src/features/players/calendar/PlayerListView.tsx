@@ -3,10 +3,12 @@ import { cn } from '@/lib/utils'
 import type { Booking } from '@/features/booking/useBookings'
 import { deriveSlotRows } from './deriveSlotRows'
 import { useCourtSettings } from '@/features/admin/useCourtSettings'
+import type { RecurringRuleInput } from '@/features/calendar/availability'
 
 interface PlayerListViewProps {
   currentDate: Date
   bookings: Booking[]
+  recurringRules?: RecurringRuleInput[]
   readOnly: boolean
   isAdmin: boolean
   onSlotClick?: (date: Date, booking?: Booking) => void
@@ -42,12 +44,13 @@ const STATUS_LABEL: Record<string, string> = {
 export default function PlayerListView({
   currentDate,
   bookings,
+  recurringRules = [],
   readOnly,
   onSlotClick,
 }: PlayerListViewProps) {
   const { data: courtSettings } = useCourtSettings()
   const scheduleEndTime = courtSettings?.court_close_time
-  const rows = deriveSlotRows(currentDate, bookings, scheduleEndTime)
+  const rows = deriveSlotRows(currentDate, bookings, scheduleEndTime, recurringRules)
 
   const now = new Date()
   const visibleRows = isToday(currentDate)

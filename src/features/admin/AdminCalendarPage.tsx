@@ -9,6 +9,7 @@ import BookingDetailsModal from '@/features/booking/BookingDetailsModal'
 import BookingForm from '@/features/booking/BookingForm'
 import { useBookings, useUpdateBooking } from '@/features/booking/useBookings'
 import type { Booking } from '@/features/booking/useBookings'
+import { useRecurringBlocks } from '@/features/admin/useCourtSettings'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDateRangeFilter } from '@/hooks/useDateRangeFilter'
 import AdminListView from '@/features/admin/AdminListView'
@@ -39,6 +40,7 @@ export default function AdminCalendarPage() {
 
   // Fetch bookings WITH player names for admin view
   const { data: bookings = [], isLoading } = useBookings(queryStartDate, queryEndDate, true)
+  const { data: recurringRules = [] } = useRecurringBlocks()
   const { mutateAsync: updateBooking } = useUpdateBooking()
   const queryClient = useQueryClient()
 
@@ -105,6 +107,7 @@ export default function AdminCalendarPage() {
           <AdminListView
             currentDate={currentDate}
             bookings={bookings}
+            recurringRules={recurringRules}
             onBookingClick={(b) => setActiveBooking(b)}
             onAvailableSlotClick={(d) => { setSelectedSlotHour(d); setIsBookingFormOpen(true) }}
             onAddBooking={(d) => { setSelectedSlotHour(d); setIsBookingFormOpen(true) }}
