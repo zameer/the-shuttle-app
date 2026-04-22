@@ -176,6 +176,21 @@
 
 ---
 
+## Decision 12: Overlap Prevention and 30-Minute Fragment Merge (2026-04-22 clarification)
+
+**Decision**: List derivation must never render overlapping rows. If preventing overlap truncates a generated AVAILABLE row to a 30-minute remainder, merge that remainder into the immediately previous AVAILABLE row.
+
+**Rationale**:
+- Overlapping rows create contradictory visual signals and action ambiguity.
+- The reported defect was caused by gap expansion extending beyond the true gap boundary into a blocking booking interval.
+- Merging the short remainder preserves continuity without adding noisy short rows.
+
+**Alternatives considered**:
+- Keep overlap and rely on booking-row priority: rejected due to user confusion.
+- Drop short remainder rows entirely: rejected because it hides real availability.
+
+---
+
 ## Implementation Outcome (2026-04-22)
 
 **Status**: First implementation pass complete (all 27 tasks marked [x]). However, the clarification session identified three regressions requiring a follow-up code fix:
@@ -194,3 +209,4 @@
 - Wired recurring rule query data into both `PublicCalendarPage` and `AdminCalendarPage` list-mode flows.
 - Verified feature-touched files with ESLint and project type-check (`npx tsc --noEmit`).
 - Implemented player-only strict boundary clamping and end-boundary truncation in `deriveSlotRows.ts` (FR-013, FR-014).
+- Implemented overlap-safe gap expansion with short-remainder merge in both player/admin derive paths (FR-015).

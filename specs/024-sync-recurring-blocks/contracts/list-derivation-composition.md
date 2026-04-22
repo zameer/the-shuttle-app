@@ -52,6 +52,8 @@ export type ComposeAvailability = (input: ComposeAvailabilityInput) => ComposedS
 6. AVAILABLE gap segments from `composeAvailabilitySegments` must be expanded to 60-minute slots by derive consumers before emitting list rows (D8, FR-009, FR-010).
 7. Player derive consumers must clamp emitted slots to configured schedule start/end boundaries; no player row may render outside window (FR-013, D11).
 8. Player derive consumers must truncate the final AVAILABLE slot at schedule end when a 60-minute expansion crosses boundary (FR-014, D11).
+9. Derive consumers must never emit AVAILABLE rows that overlap a later blocking booking interval (FR-015, D12).
+10. If overlap prevention produces a short trailing AVAILABLE remainder (for example 30 minutes), derive consumers must merge it into the immediately previous contiguous AVAILABLE row (FR-015, D12).
 
 ## Consumers
 
@@ -64,7 +66,7 @@ export type ComposeAvailability = (input: ComposeAvailabilityInput) => ComposedS
 2. Interval precedence is enforced in `composeAvailabilitySegments`: CONFIRMED/PENDING/UNAVAILABLE booking first, CANCELLED/NO_SHOW booking yields AVAILABLE (D7), recurring second, gap last.
 3. Invalid recurring rules (`end <= start`) and out-of-window intervals are skipped by clamping logic.
 4. Adjacent segments with identical status/source are merged to avoid duplicate visual rows.
-5. Derive consumers (`deriveSlotRows`, `deriveAdminListRows`) apply `expandGapTo60MinSlots` post-processing; player flow additionally clamps/truncates boundary-crossing final rows per FR-013/FR-014.
+5. Derive consumers (`deriveSlotRows`, `deriveAdminListRows`) apply `expandGapTo60MinSlots` post-processing with overlap-safe boundaries; player flow additionally clamps/truncates boundary-crossing final rows per FR-013/FR-014 and both roles merge short trailing AVAILABLE remainders per FR-015.
 
 ## Compatibility Notes
 

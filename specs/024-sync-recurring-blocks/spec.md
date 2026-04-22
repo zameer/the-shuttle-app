@@ -59,6 +59,7 @@ As a user of either role, I want list and calendar to use the same recurring-una
 - Recurring blocks with start or end times at view boundary edges should not disappear in list view.
 - Overlapping recurring unavailable blocks should not produce contradictory availability states between views.
 - A recurring block that covers the same window as a CANCELLED or NO_SHOW booking must be suppressed; the slot shows AVAILABLE, not UNAVAILABLE.
+- If overlap prevention leaves a 30-minute AVAILABLE fragment (for example, 08:30-09:00) immediately after an AVAILABLE slot, the 30-minute fragment must be merged into the previous AVAILABLE slot rather than rendered as a separate row.
 - Date-range navigation should not omit recurring blocks at the first or last visible day in list view.
 - Timezone/date-shift boundaries should not cause a block to appear in one view and not the other.
 
@@ -74,12 +75,13 @@ As a user of either role, I want list and calendar to use the same recurring-una
 - **FR-006**: The system MUST update both views consistently after recurring block creation, update, or removal.
 - **FR-007**: The system MUST preserve unavailable status when recurring blocks overlap with CONFIRMED or PENDING bookings; however, CANCELLED or NO_SHOW bookings MUST restore the slot to AVAILABLE even when a recurring block covers the same window.
 - **FR-008**: The system MUST avoid role-based discrepancies where one role sees recurring blocks in one view but not the other.
-- **FR-009**: The system MUST preserve 60-minute granularity for AVAILABLE slots in list view; recurring-block injection must not collapse available gaps into variable-length segments, except where strict player-view schedule window boundaries require clamping (see FR-014).
-- **FR-010**: When an available gap starts at a non-hour boundary (e.g., 07:30) due to an adjacent recurring block, the system MUST render it as a full 60-minute AVAILABLE slot from that start time (e.g., 07:30–08:30), not truncated to the gap's natural end, except where strict player-view schedule window boundaries apply (see FR-013 and FR-014).
+- **FR-009**: The system MUST preserve 60-minute granularity for AVAILABLE slots in list view; recurring-block injection must not collapse available gaps into variable-length segments, except where strict player-view schedule window boundaries require clamping (see FR-014) or where overlap-prevention merge rules apply (see FR-015).
+- **FR-010**: When an available gap starts at a non-hour boundary (e.g., 07:30) due to an adjacent recurring block, the system MUST render it as a full 60-minute AVAILABLE slot from that start time (e.g., 07:30–08:30), not truncated to the gap's natural end, except where strict player-view schedule window boundaries apply (see FR-013 and FR-014) or overlap-prevention merge rules apply (see FR-015).
 - **FR-011**: Recurring-block rows rendered in list view MUST have `actionable: false` for all roles; they present no booking or editing interaction target.
 - **FR-012**: When `recurringRules` is an empty array, the derivation output MUST be byte-for-byte equivalent in structure to the pre-024 derivation — same number of rows, same 60-minute slot boundaries, same status values.
 - **FR-013**: In player list view, derived time slots MUST remain fully within configured schedule start and end times; no displayed slot may start before daily start time or end after daily end time.
 - **FR-014**: In player list view, if the final derived AVAILABLE slot would extend past configured daily end time, the slot MUST be truncated to end exactly at daily end time (for example, 21:30–22:00).
+- **FR-015**: List view MUST NOT render overlapping rows. If resolving overlap with a blocking booking truncates an AVAILABLE row to a 30-minute remainder, that remainder MUST be merged into the immediately previous AVAILABLE row instead of being rendered as a separate row.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -115,3 +117,4 @@ As a user of either role, I want list and calendar to use the same recurring-una
 - Q: When `recurringRules` is empty, must `composeAvailabilitySegments` output be identical to the pre-024 derivation? → A: Yes — with an empty `recurringRules` array the list view must produce exactly the same 60-minute AVAILABLE slots and booking rows as the pre-024 code; any deviation is a regression.
 - Q: Should strict start/end-time clamping apply to player view only or both roles? → A: Player view only; player list slots must stay fully within configured start and end time boundaries.
 - Q: In player list view, when the final 60-minute slot would cross the configured end time, should it be truncated, omitted, or shifted? → A: Truncate the final player slot to the boundary (for example, 21:30–22:00).
+- Q: How should overlapping list rows be resolved when a generated AVAILABLE slot collides with a blocking booking (as seen in the overlap screenshot)? → A: Do not allow overlap; truncate the AVAILABLE row at booking start, and if that leaves a 30-minute fragment, merge it into the previous AVAILABLE row.

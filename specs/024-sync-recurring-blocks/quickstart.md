@@ -6,6 +6,8 @@ Validate recurring unavailable parity between calendar and list views for player
 
 - Existing recurring parity wiring was already present in both player and admin list paths.
 - Core remaining gap from clarify outcomes was player-only strict boundary behavior (FR-013, FR-014).
+- A reported overlap symptom existed in list rows when a generated AVAILABLE row crossed into a later booking start.
+- Clarified FR-015 adds two strict rules: no overlapping rows, and merge short trailing AVAILABLE remainders (for example 30 minutes) into the previous AVAILABLE row.
 - `npm test` is not available in this repository; quality checks rely on lint, type-check, and manual scenario walkthroughs.
 
 ## Prerequisites
@@ -79,7 +81,7 @@ Expected:
 - Feature-touched files lint clean.
 - Type-check passes.
 
-## 7. Regression checks (FR-009, FR-010, FR-012, FR-013, FR-014)
+## 7. Regression checks (FR-009, FR-010, FR-012, FR-013, FR-014, FR-015)
 
 After the Phase 1.2 fix (`expandGapTo60MinSlots`) is applied:
 
@@ -94,6 +96,9 @@ After the Phase 1.2 fix (`expandGapTo60MinSlots`) is applied:
 5. **Player end-boundary truncation** (FR-014): Configure a boundary-adjacent available gap where
   full 60-min expansion would cross daily close. Expected: final player row is truncated to end
   exactly at close time (example: 21:30-22:00).
+6. **No overlap + merge remainder** (FR-015): Reproduce an interval where naive 60-min expansion
+  would overlap an upcoming blocking booking. Expected: no overlap in rendered rows and any short
+  tail remainder is merged into the previous contiguous AVAILABLE row.
 
 ## 8. Validation log (2026-04-22 -- implementation pass)
 
@@ -105,6 +110,8 @@ After the Phase 1.2 fix (`expandGapTo60MinSlots`) is applied:
   - `composeAvailabilitySegments.ts`: `BLOCKING_STATUSES` constant added; CANCELLED/NO_SHOW now yield AVAILABLE (FR-007).
   - `deriveSlotRows.ts`: `expandGapTo60MinSlots` helper added; gap segments expand to 60-min slots and final player boundary slot is truncated at `scheduleEnd` (FR-009, FR-010, FR-013, FR-014).
   - `deriveAdminListRows.ts`: same `expandGapTo60MinSlots` helper added (FR-009, FR-010, FR-012).
+  - `deriveSlotRows.ts`: overlap-safe expansion now stops at true gap boundary and merges short trailing AVAILABLE remainder into previous AVAILABLE row (FR-015).
+  - `deriveAdminListRows.ts`: same overlap-safe expansion and remainder merge behavior applied for admin list parity (FR-015).
 - T014-T017 (manual browser regression checks): pending QA on seeded Supabase environment.
   See Section 7 for exact test steps.
 - FR-013/FR-014 boundary logic: implemented in `deriveSlotRows.ts` by clamping expanded player gap rows to `window.scheduleEnd`.

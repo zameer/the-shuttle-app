@@ -5,37 +5,37 @@
 
 ## Summary
 
-Restore and harden recurring-block parity between calendar and list views for both roles, while preserving legacy list behavior and adding strict player-window boundaries. The technical approach keeps a shared availability composition utility, then applies role-aware list-slot post-processing: recurring rows remain non-actionable, CANCELLED/NO_SHOW intervals resolve to AVAILABLE, and player list rows are clamped to schedule start/end with final-slot truncation at end boundary.
+Implement overlap-safe list derivation parity for recurring blocks across player and admin flows. Existing shared composition remains the canonical source of truth; derive consumers now expand gap segments without crossing blocking booking boundaries and merge short 30-minute truncation remainders into the previous AVAILABLE row. This closes the visible overlap defect while preserving clarified behavior for CANCELLED/NO_SHOW precedence and schedule boundary clamping.
 
 ## Technical Context
 
 **Language/Version**: TypeScript 6.0.2, React 19.2.4  
 **Primary Dependencies**: Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, Supabase JS 2.103.0, date-fns 4.1.0, lucide-react 1.8  
 **Storage**: Supabase PostgreSQL (existing `bookings`, `court_settings`, `recurring_unavailable_blocks`)  
-**Testing**: `npm run lint`, targeted ESLint on touched files, `npx tsc --noEmit`, manual parity checks in player/admin list + calendar  
-**Target Platform**: Modern desktop/mobile browsers for player/admin SPA views  
-**Project Type**: Single-project React web app (SPA)  
-**Performance Goals**: Preserve current list derivation responsiveness; no visible regressions in list render speed across 14-day navigation windows  
-**Constraints**: No schema changes, strict TypeScript, preserve existing list row shapes, player list slots must never render outside schedule bounds  
-**Scale/Scope**: Availability composition and list-derivation paths in `src/features/calendar/availability/`, `src/features/players/calendar/`, and `src/features/admin/calendar/`
+**Testing**: `npm run lint`, targeted `eslint` on touched files, `npx tsc --noEmit`, manual list/calendar parity walkthrough  
+**Target Platform**: Modern mobile and desktop browsers  
+**Project Type**: Single-project React SPA  
+**Performance Goals**: No perceptible regressions in list-row generation during date navigation  
+**Constraints**: No schema changes, strict TypeScript, preserve existing row-shape contracts for list components  
+**Scale/Scope**: `src/features/calendar/availability/`, `src/features/players/calendar/`, `src/features/admin/calendar/`, and 024 feature docs/contracts
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [x] **I. Spec-First**: `specs/024-sync-recurring-blocks/spec.md` exists with prioritized stories, edge cases, and clarification log including FR-013/FR-014.
-- [x] **II. Type Safety**: No `any` introduced; composition and row contracts remain explicit TypeScript interfaces/unions.
-- [x] **III. Component Reusability**: Business logic stays in derivation utilities/hooks, not list UI components.
-- [x] **IV. Data Integrity & Security**: Existing Supabase RLS model preserved; no client-side security relaxation and no schema migration.
-- [x] **V. Responsive Design**: Calendar/list parity remains across player/admin mobile and desktop layouts; no responsive contract regression introduced.
+- [x] **I. Spec-First**: `specs/024-sync-recurring-blocks/spec.md` exists with prioritized stories and clarified FR-015 overlap behavior.
+- [x] **II. Type Safety**: Plan introduces no `any`; existing typed derivation interfaces are preserved.
+- [x] **III. Component Reusability**: Business logic remains in derivation utilities; list UI components remain presentation-focused.
+- [x] **IV. Data Integrity & Security**: No DB/RLS changes; existing authenticated data access patterns remain unchanged.
+- [x] **V. Responsive Design**: No visual redesign; behavior remains consistent across supported breakpoints.
 
 ### Post-Design Constitution Re-Check
 
-- [x] **I. Spec-First**: Research and contracts map directly to FR-001 through FR-014.
-- [x] **II. Type Safety**: Data model and contracts define typed precedence and boundary-clamping behavior.
-- [x] **III. Component Reusability**: Slot-boundary handling is defined as derivation behavior, preserving UI separation.
-- [x] **IV. Data Integrity & Security**: Changes are display-layer only, with unchanged auth/RLS boundaries.
-- [x] **V. Responsive Design**: Quickstart includes parity checks for both roles and boundary behavior on player list views.
+- [x] **I. Spec-First**: Research/data-model/contracts/quickstart map to FR-001 through FR-015.
+- [x] **II. Type Safety**: Slot merge rules are represented as explicit typed segment transformations.
+- [x] **III. Component Reusability**: Player/admin derive functions share consistent post-processing intent.
+- [x] **IV. Data Integrity & Security**: Availability derivation remains client-display logic only.
+- [x] **V. Responsive Design**: No responsive regressions introduced by derivation-only changes.
 
 ## Project Structure
 
@@ -62,59 +62,50 @@ src/
 |   |   `-- availability/
 |   |       |-- composeAvailabilitySegments.ts
 |   |       |-- scheduleWindow.ts
-|   |       `-- types.ts
+|   |       |-- types.ts
+|   |       `-- index.ts
 |   |-- players/
 |   |   |-- PublicCalendarPage.tsx
 |   |   `-- calendar/
+|   |       |-- PlayerListView.tsx
 |   |       `-- deriveSlotRows.ts
 |   `-- admin/
 |       |-- AdminCalendarPage.tsx
+|       |-- AdminListView.tsx
 |       `-- calendar/
 |           `-- deriveAdminListRows.ts
-`-- components/
-    `-- shared/
 ```
 
-**Structure Decision**: Keep the current single-project SPA structure and centralize parity logic in shared availability utilities, while allowing role-specific post-processing in each list derivation function.
+**Structure Decision**: Keep the existing single-project structure and implement overlap-merge behavior in derive-level post-processing while preserving shared composition contracts.
 
 ## Phase 0 Research Deliverables
 
-- `research.md` updated with boundary-clamping and truncation decisions for strict player list behavior.
-- Precedence model reaffirmed: blocking booking statuses, CANCELLED/NO_SHOW override, recurring fill, then gap.
-- Regression safety rules captured for empty `recurringRules` and non-actionable recurring rows.
+- Capture explicit overlap-prevention decision and merge rule rationale (FR-015).
+- Confirm precedence interactions with existing D7-D11 decisions.
 
 ## Phase 1 Design Deliverables
 
-- `data-model.md` updated with player-boundary-clamped slot semantics and final-slot truncation rule.
-- Contracts updated:
+- Update `data-model.md` validation rules for overlap-free merged rows.
+- Update contracts:
   - `contracts/list-derivation-composition.md`
   - `contracts/recurring-block-list-parity.md`
-- `quickstart.md` updated with explicit validation for FR-013/FR-014 boundary behavior.
-
-## Phase 2 Implementation Preview (for /speckit.tasks)
-
-1. Add/adjust role-aware gap expansion helper behavior in player list derivation to enforce start/end boundaries and truncation.
-2. Confirm admin list derivation remains parity-safe without introducing player-only boundary side effects.
-3. Validate CANCELLED/NO_SHOW precedence still holds with clamped/truncated player slots.
-4. Re-run lint/type-check and manual parity checks for edge windows.
+- Extend `quickstart.md` regression checklist and validation log for FR-015 scenarios.
 
 ## Current Touched-File Scope
 
-- `src/features/calendar/availability/composeAvailabilitySegments.ts`
-- `src/features/calendar/availability/scheduleWindow.ts`
-- `src/features/calendar/availability/types.ts`
+- `src/features/players/calendar/deriveSlotRows.ts`
+- `src/features/admin/calendar/deriveAdminListRows.ts`
 - `src/features/calendar/availability/index.ts`
 - `src/features/players/PublicCalendarPage.tsx`
 - `src/features/players/calendar/PlayerListView.tsx`
-- `src/features/players/calendar/deriveSlotRows.ts`
 - `src/features/admin/AdminCalendarPage.tsx`
 - `src/features/admin/AdminListView.tsx`
-- `src/features/admin/calendar/deriveAdminListRows.ts`
-
-## Implementation Status (2026-04-22)
-
-- Shared composition and recurring wiring are implemented in both player and admin flows.
-- Player list boundary enforcement and end-boundary truncation (FR-013, FR-014) are implemented in `deriveSlotRows.ts`.
+- `specs/024-sync-recurring-blocks/research.md`
+- `specs/024-sync-recurring-blocks/data-model.md`
+- `specs/024-sync-recurring-blocks/contracts/list-derivation-composition.md`
+- `specs/024-sync-recurring-blocks/contracts/recurring-block-list-parity.md`
+- `specs/024-sync-recurring-blocks/quickstart.md`
+- `specs/024-sync-recurring-blocks/tasks.md`
 
 ## Complexity Tracking
 
