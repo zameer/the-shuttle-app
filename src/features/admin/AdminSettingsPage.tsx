@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useCourtSettings, useUpdateCourtSettings, useRecurringBlocks, useCreateRecurringBlock, useDeleteRecurringBlock } from './useCourtSettings'
+import type { PlayerDisplayMode } from './useCourtSettings'
 import { useCreateRule, useUpdateRule, useDeleteRule, useReorderRules } from './useAdminRules'
 import { useCourtRules } from '@/features/players/rules/useCourtRules'
 import { RULE_ICON_MAP, RULE_ICON_OPTIONS, DEFAULT_RULE_ICON } from '@/features/players/rules/ruleIcons'
@@ -12,6 +13,7 @@ type Tab = 'hours' | 'terms' | 'rules'
 export default function AdminSettingsPage() {
   const [tab, setTab] = useState<Tab>('hours')
   const [success, setSuccess] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const { data: rules = [], isLoading: rulesLoading } = useCourtRules()
   const { mutateAsync: createRule, isPending: isCreatingRule } = useCreateRule()
@@ -34,6 +36,11 @@ export default function AdminSettingsPage() {
   // Terms form
   const [termsText, setTermsText] = useState('')
 
+  // Player display mode form
+  const [playerDisplayMode, setPlayerDisplayMode] = useState<PlayerDisplayMode>('calendar')
+  const [closureMessageMarkdown, setClosureMessageMarkdown] = useState('')
+  const [closureValidationError, setClosureValidationError] = useState<string | null>(null)
+
   // New recurring block form
   const [newDay, setNewDay] = useState(1)
   const [newStart, setNewStart] = useState('08:00')
@@ -47,38 +54,76 @@ export default function AdminSettingsPage() {
       setDefaultRate(settings.default_hourly_rate)
       setRatesInput(settings.available_rates.join(', '))
       setTermsText(settings.terms_and_conditions ?? '')
+      setPlayerDisplayMode(settings.player_display_mode === 'closure_message' ? 'closure_message' : 'calendar')
+      setClosureMessageMarkdown(settings.closure_message_markdown ?? '')
     }
   }, [settings])
 
   const showSuccess = (msg: string) => {
     setSuccess(msg)
+    setError(null)
     setTimeout(() => setSuccess(null), 3000)
   }
 
+  const showError = (msg: string) => {
+    setError(msg)
+    setTimeout(() => setError(null), 4000)
+  }
+
   const handleSaveHours = async () => {
-    const rates = ratesInput.split(',').map(r => parseInt(r.trim())).filter(n => !isNaN(n))
-    await updateSettings({
-      court_open_time: `${openTime}:00`,
-      court_close_time: `${closeTime}:00`,
-      default_hourly_rate: defaultRate,
-      available_rates: rates,
-    })
-    showSuccess('Court hours & rates saved!')
+    try {
+      const rates = ratesInput.split(',').map(r => parseInt(r.trim())).filter(n => !isNaN(n))
+      await updateSettings({
+        court_open_time: `${openTime}:00`,
+        court_close_time: `${closeTime}:00`,
+        default_hourly_rate: defaultRate,
+        available_rates: rates,
+      })
+      showSuccess('Court hours & rates saved!')
+    } catch (saveError) {
+      showError(saveError instanceof Error ? saveError.message : 'Failed to save court hours and rates.')
+    }
   }
 
   const handleSaveTerms = async () => {
-    await updateSettings({ terms_and_conditions: termsText })
-    showSuccess('Terms & Conditions saved!')
+    try {
+      await updateSettings({ terms_and_conditions: termsText })
+      showSuccess('Terms & Conditions saved!')
+    } catch (saveError) {
+      showError(saveError instanceof Error ? saveError.message : 'Failed to save terms and conditions.')
+    }
   }
 
   const handleAddBlock = async () => {
-    await createBlock({
-      day_of_week: newDay,
-      start_time: `${newStart}:00`,
-      end_time: `${newEnd}:00`,
-      label: newLabel || 'Maintenance'
-    })
-    showSuccess('Recurring block added!')
+    try {
+      await createBlock({
+        day_of_week: newDay,
+        start_time: `${newStart}:00`,
+        end_time: `${newEnd}:00`,
+        label: newLabel || 'Maintenance'
+      })
+      showSuccess('Recurring block added!')
+    } catch (saveError) {
+      showError(saveError instanceof Error ? saveError.message : 'Failed to add recurring block.')
+    }
+  }
+
+  const handleSavePlayerDisplay = async () => {
+    setClosureValidationError(null)
+    if (playerDisplayMode === 'closure_message' && closureMessageMarkdown.trim().length === 0) {
+      setClosureValidationError('Closure message is required when closure mode is active.')
+      return
+    }
+
+    try {
+      await updateSettings({
+        player_display_mode: playerDisplayMode,
+        closure_message_markdown: closureMessageMarkdown,
+      })
+      showSuccess('Player display mode saved!')
+    } catch (saveError) {
+      showError(saveError instanceof Error ? saveError.message : 'Failed to save player display mode.')
+    }
   }
 
   if (settingsLoading) {
@@ -101,6 +146,12 @@ export default function AdminSettingsPage() {
       {success && (
         <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm font-medium">
           ✓ {success}
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
+          {error}
         </div>
       )}
 
@@ -253,6 +304,71 @@ export default function AdminSettingsPage() {
             >
               {isCreatingBlock ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
               Add Block
+            </button>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+            <h3 className="text-base font-semibold text-gray-800 mb-2">Player View Mode</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Switch the public player page between normal calendar mode and a full-court closure message.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <button
+                type="button"
+                onClick={() => setPlayerDisplayMode('calendar')}
+                className={`rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                  playerDisplayMode === 'calendar'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <p className="font-semibold">Calendar</p>
+                <p className="text-xs mt-1 text-gray-500">Players see the regular calendar and list views.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlayerDisplayMode('closure_message')}
+                className={`rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                  playerDisplayMode === 'closure_message'
+                    ? 'border-amber-500 bg-amber-50 text-amber-700'
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <p className="font-semibold">Closure Message</p>
+                <p className="text-xs mt-1 text-gray-500">Players see a formatted unavailable notice only.</p>
+              </button>
+            </div>
+
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Closure Message (Markdown)</label>
+            <p className="text-xs text-gray-500 mb-2">Supported formatting: headings, emphasis, and bullet lists.</p>
+            <textarea
+              value={closureMessageMarkdown}
+              onChange={(event) => {
+                setClosureMessageMarkdown(event.target.value)
+                if (closureValidationError) {
+                  setClosureValidationError(null)
+                }
+              }}
+              rows={8}
+              placeholder="# Court Unavailable Until Further Notice\n\nWe are temporarily closed for maintenance."
+              className={`w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 resize-y font-mono ${
+                closureValidationError
+                  ? 'border-red-300 focus:ring-red-500'
+                  : 'border-gray-200 focus:ring-blue-500'
+              }`}
+            />
+            {closureValidationError && (
+              <p className="mt-2 text-sm text-red-600">{closureValidationError}</p>
+            )}
+
+            <button
+              onClick={handleSavePlayerDisplay}
+              disabled={isSavingSettings}
+              className="mt-4 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-60 transition-colors"
+            >
+              {isSavingSettings ? <Loader2 size={14} className="animate-spin" /> : null}
+              Save Player Display Mode
             </button>
           </div>
         </div>

@@ -11,7 +11,8 @@ import { useNextAvailableAgent } from './call/useNextAvailableAgent'
 import CallFAB from './call/CallFAB'
 import CallbackRequestModal from './call/CallbackRequestModal'
 import { usePWAInstallPrompt } from '@/hooks/usePWAInstallPrompt'
-import { useRecurringBlocks } from '@/features/admin/useCourtSettings'
+import { useCourtSettings, useRecurringBlocks } from '@/features/admin/useCourtSettings'
+import ClosureMessagePanel from '@/components/shared/ClosureMessagePanel'
 
 type DisplayMode = 'calendar' | 'list'
 
@@ -49,6 +50,8 @@ export default function PublicCalendarPage() {
 
   const { data: rawBookings = [], isLoading } = usePublicBookings(startDate, endDate)
   const { data: recurringRules = [] } = useRecurringBlocks()
+  const { data: courtSettings } = useCourtSettings()
+  const isClosureMode = courtSettings?.player_display_mode === 'closure_message'
 
   // Map to the shared calendar interface securely without PII
   // Strip all sensitive data: player names/phone, payment info, rates
@@ -87,35 +90,37 @@ export default function PublicCalendarPage() {
         </div>
       )}
       <div className="flex w-full justify-end mb-2">
-        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 gap-0.5" role="group" aria-label="View mode">
-          <button
-            onClick={() => setDisplayMode('list')}
-            aria-pressed={displayMode === 'list'}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              displayMode === 'list'
-                ? 'bg-white shadow text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <LayoutList className="w-4 h-4" />
-            List
-          </button>
-          <button
-            onClick={() => setDisplayMode('calendar')}
-            aria-pressed={displayMode === 'calendar'}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              displayMode === 'calendar'
-                ? 'bg-white shadow text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <CalendarDays className="w-4 h-4" />
-            Calendar
-          </button>
-        </div>
+        {!isClosureMode && (
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 gap-0.5" role="group" aria-label="View mode">
+            <button
+              onClick={() => setDisplayMode('list')}
+              aria-pressed={displayMode === 'list'}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                displayMode === 'list'
+                  ? 'bg-white shadow text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <LayoutList className="w-4 h-4" />
+              List
+            </button>
+            <button
+              onClick={() => setDisplayMode('calendar')}
+              aria-pressed={displayMode === 'calendar'}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                displayMode === 'calendar'
+                  ? 'bg-white shadow text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <CalendarDays className="w-4 h-4" />
+              Calendar
+            </button>
+          </div>
+        )}
       </div>
 
-      {displayMode === 'calendar' && (
+      {!isClosureMode && displayMode === 'calendar' && (
         <p className="mb-2 w-full text-left text-xs text-gray-500 md:hidden">
           Swipe horizontally to see all days and times.
         </p>
@@ -123,6 +128,10 @@ export default function PublicCalendarPage() {
 
       {isLoading ? (
         <div className="h-[68vh] w-full animate-pulse rounded-lg border bg-white shadow-sm md:h-[72vh]" />
+      ) : isClosureMode ? (
+        <div className="w-full">
+          <ClosureMessagePanel message={courtSettings?.closure_message_markdown ?? null} />
+        </div>
       ) : displayMode === 'list' ? (
         <div className="w-full">
           <ListDateNav value={currentDate} onChange={setCurrentDate} minDate={today} />
@@ -147,12 +156,16 @@ export default function PublicCalendarPage() {
         />
       )}
       
-      <CallFAB
-        availableAgentPhone={availableAgentPhone}
-        isLoading={agentLoading}
-        onRequestCallback={() => setIsModalOpen(true)}
-      />
-      <CallbackRequestModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      {!isClosureMode && (
+        <>
+          <CallFAB
+            availableAgentPhone={availableAgentPhone}
+            isLoading={agentLoading}
+            onRequestCallback={() => setIsModalOpen(true)}
+          />
+          <CallbackRequestModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        </>
+      )}
     </div>
   )
 }
