@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/services/supabase'
 
+export type PlayerDisplayMode = 'calendar' | 'closure_message'
+
 export interface CourtSettings {
   id: number
   court_open_time: string   // e.g. "06:00:00"
@@ -8,6 +10,8 @@ export interface CourtSettings {
   default_hourly_rate: number
   available_rates: number[]
   terms_and_conditions: string | null
+  player_display_mode: PlayerDisplayMode | null
+  closure_message_markdown: string | null
 }
 
 export interface RecurringBlock {
@@ -49,8 +53,9 @@ export function useUpdateCourtSettings() {
       if (error) throw new Error(error.message)
       return data as CourtSettings
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['court-settings'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['court-settings'] })
+      await queryClient.refetchQueries({ queryKey: ['court-settings'], type: 'active' })
     }
   })
 }

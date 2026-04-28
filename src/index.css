@@ -112,4 +112,60 @@
   .calendar-scroll::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
   }
+
+  .closure-message-content > :first-child {
+    margin-top: 0;
+  }
+
+  .closure-message-content p {
+    line-height: 1.6;
+    margin: 0 0 0.75rem;
+  }
+
+  .closure-message-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .closure-message-content h1,
+  .closure-message-content h2,
+  .closure-message-content h3 {
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 1rem 0 0.5rem;
+  }
+
+  .closure-message-content h1 {
+    font-size: 1.25rem;
+  }
+
+  .closure-message-content h2 {
+    font-size: 1.125rem;
+  }
+
+  .closure-message-content ul,
+  .closure-message-content ol {
+    margin: 0.5rem 0 0.75rem 1.25rem;
+  }
+
+  .closure-message-content ul {
+    list-style: disc;
+  }
+
+  .closure-message-content ol {
+    list-style: decimal;
+  }
+
+  .closure-message-content li {
+    margin: 0.25rem 0;
+  }
+
+  .closure-message-content a {
+    color: #92400e;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .closure-message-content strong {
+    font-weight: 700;
+  }
 }
