@@ -37,7 +37,6 @@ class MarkdownErrorBoundary extends Component<MarkdownErrorBoundaryProps, Markdo
 }
 
 export default function ClosureMessagePanel({
-  heading = 'Court Unavailable Until Further Notice',
   message,
 }: ClosureMessagePanelProps) {
   const trimmedMessage = message?.trim() ?? ''
@@ -46,8 +45,7 @@ export default function ClosureMessagePanel({
 
   return (
     <section className="w-full rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm md:p-7" aria-live="polite">
-      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Service Notice</p>
-      <h2 className="mt-2 text-xl font-bold text-amber-950 md:text-2xl">{heading}</h2>
+      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Player Guidelines & Expectations</p>
       <div className="closure-message-content mt-4 text-sm text-amber-900 md:text-base">
         <MarkdownErrorBoundary fallback={<p>{displayMessage}</p>}>
           <ReactMarkdown>{displayMessage}</ReactMarkdown>
