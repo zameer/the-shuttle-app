@@ -1,102 +1,88 @@
-# Data Model: Paid Detail Status + Booking-Status Filters
+﻿# Data Model: Paid Detail Manual Load Flow
 
 ## Overview
 
-This feature introduces no database schema changes. New entities are TypeScript-level view/filter models derived from existing booking rows.
+No database schema changes are required. This feature introduces client-side state modeling for draft filters versus applied filters to control when detail data is fetched.
 
 ## Entities
 
 ### 1. DetailStatusScope
 
-- Type: string union
+- Type: union
 - Values: `PAID` | `OUTSTANDING`
-- Purpose: Primary scope selector on Paid Detail page
-- Default: `PAID`
-
-Proposed type:
-
-```ts
-export type DetailStatusScope = 'PAID' | 'OUTSTANDING'
-```
+- Purpose: Selects result scope in filter controls
+- Default draft value: `PAID`
 
 ### 2. OutstandingBookingStatus
 
-- Type: string union
-- Values (minimum required): `CONFIRMED` | `CANCELLED` | `NO_SHOW`
-- Purpose: Multi-select values when scope is `OUTSTANDING`
-- Default selected set: all values selected
+- Type: union
+- Values: `CONFIRMED` | `CANCELLED` | `NO_SHOW`
+- Purpose: Additional filtering when scope is OUTSTANDING
+- Default draft set: all values selected
 
-Proposed type:
+### 3. PaidDetailDraftFilters (new)
 
-```ts
-export type OutstandingBookingStatus = 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW'
-```
-
-### 3. PaidDetailFilterState
-
-Represents filter state used by `PaidDetailPage` and `usePaidDetail`.
+Editable filters that do not trigger fetch immediately.
 
 Fields:
-
-- `startDate: string` (YYYY-MM-DD)
-- `endDate: string` (YYYY-MM-DD)
+- `startDate: string`
+- `endDate: string`
 - `scope: DetailStatusScope`
 - `outstandingStatuses: OutstandingBookingStatus[]`
 
-Notes:
+### 4. PaidDetailAppliedFilters (new)
 
-- `outstandingStatuses` applies only when `scope === 'OUTSTANDING'`.
-- On initial load, `scope = 'PAID'` and `outstandingStatuses = ['CONFIRMED', 'CANCELLED', 'NO_SHOW']`.
+Snapshot of filters used for the most recent load action.
 
-### 4. PaidDetailRow (existing alias usage retained)
+Fields:
+- `startDate: string`
+- `endDate: string`
+- `scope: DetailStatusScope`
+- `outstandingStatuses: OutstandingBookingStatus[]`
 
-- Existing semantic alias of normalized financial booking row.
-- Row inclusion logic changes by filter state:
-  - Scope `PAID`: include paid rows.
-  - Scope `OUTSTANDING`: include non-paid rows and only selected booking statuses.
+Behavior:
+- Set only when Load Details is clicked.
+- Drives query key and fetch parameters.
 
-### 5. PaidDetailSummary
+### 5. PaidDetailLoadState (new)
 
-Summary remains aggregate of current filtered rows:
+Represents whether a load action has occurred.
 
-- `totalAmount: number`
-- `totalHours: number`
-- `totalBookings: number`
+Fields:
+- `hasLoadedOnce: boolean`
+
+Behavior:
+- `false` on initial page render.
+- Becomes `true` after first successful load trigger.
+
+### 6. PaidDetailOutput (existing)
+
+Returned from service for applied filters:
+- `rows: PaidDetailRow[]`
+- `summary: PaidDetailSummary`
 
 ## Validation Schemas
 
-### Scope Schema
-
-```ts
-z.enum(['PAID', 'OUTSTANDING'])
-```
-
-### Outstanding Status List Schema
-
-```ts
-z.array(z.enum(['CONFIRMED', 'CANCELLED', 'NO_SHOW'])).min(1)
-```
-
-### Filter Input Schema
-
-Composed schema containing date range, scope, and outstanding status list.
+- `paidDetailFilterInputSchema`: validates applied filters used by data-fetch hook.
+- `outstandingBookingStatusesSchema`: enforces at least one selected outstanding status.
 
 ## State Transitions
 
-1. Initial load:
-- `scope = 'PAID'`
-- `outstandingStatuses = ['CONFIRMED', 'CANCELLED', 'NO_SHOW']`
-- `currentPage = 1`
+1. Initial page open:
+- Draft filters initialized.
+- Applied filters unset or set to initial snapshot with query disabled.
+- `hasLoadedOnce = false`.
 
-2. Scope change:
-- Update `scope`
-- Keep date range unchanged
-- Reset `currentPage = 1`
+2. Edit filters:
+- Draft filters update.
+- Result table and summary remain unchanged.
 
-3. Outstanding status selection change:
-- Update `outstandingStatuses`
-- Reset `currentPage = 1`
+3. Click Load Details:
+- Applied filters = draft filters snapshot.
+- `hasLoadedOnce = true`.
+- Query executes using applied filters.
+- Pagination resets to page 1.
 
-4. Date change:
-- Update date field(s)
-- Reset `currentPage = 1`
+4. Pagination changes:
+- Affects only current view of already loaded rows.
+- No refetch until next load action.

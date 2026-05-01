@@ -1,22 +1,28 @@
-// contracts/PaidDetailFiltersContract.ts
+﻿// contracts/PaidDetailFiltersContract.ts
 // Feature: 027-paid-detail-status-filter
-// Scope: Filter state and interaction contract for PaidDetailPage
+// Scope: Draft vs applied filter contracts for manual load behavior
 
 export type DetailStatusScope = 'PAID' | 'OUTSTANDING'
 export type OutstandingBookingStatus = 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW'
 
-export interface PaidDetailFilterInput {
+export interface PaidDetailDraftFilters {
   startDate: string
   endDate: string
   scope: DetailStatusScope
   outstandingStatuses: OutstandingBookingStatus[]
 }
 
-// UI Contract:
-// 1. Scope selector appears in PaidDetailPage filter section with Start Date and End Date.
-// 2. Default scope is PAID.
-// 3. Booking-status multi-select is visible only when scope=OUTSTANDING.
-// 4. Default multi-select values: CONFIRMED, CANCELLED, NO_SHOW (all selected).
-// 5. Any filter change resets currentPage to 1.
+export interface PaidDetailAppliedFilters {
+  startDate: string
+  endDate: string
+  scope: DetailStatusScope
+  outstandingStatuses: OutstandingBookingStatus[]
+}
+
+// Interaction contract:
+// 1. Editing draft filters MUST NOT trigger data fetch.
+// 2. Clicking Load Details copies draft filters into applied filters.
+// 3. Query and rendered results are based only on applied filters.
+// 4. Pagination resets on each load action.
 
 export {}

@@ -51,7 +51,9 @@ export default function PublicCalendarPage() {
   const { data: rawBookings = [], isLoading } = usePublicBookings(startDate, endDate)
   const { data: recurringRules = [] } = useRecurringBlocks()
   const { data: courtSettings } = useCourtSettings()
-  const isClosureMode = courtSettings?.player_display_mode === 'closure_message'
+  const mode = courtSettings?.player_display_mode ?? 'calendar'
+  const showCalendar = mode === 'calendar' || mode === 'both'
+  const showMessage = mode === 'closure_message' || mode === 'both'
 
   // Map to the shared calendar interface securely without PII
   // Strip all sensitive data: player names/phone, payment info, rates
@@ -90,7 +92,7 @@ export default function PublicCalendarPage() {
         </div>
       )}
       <div className="flex w-full justify-end mb-2">
-        {!isClosureMode && (
+        {showCalendar && (
           <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 gap-0.5" role="group" aria-label="View mode">
             <button
               onClick={() => setDisplayMode('list')}
@@ -120,19 +122,21 @@ export default function PublicCalendarPage() {
         )}
       </div>
 
-      {!isClosureMode && displayMode === 'calendar' && (
+      {showCalendar && displayMode === 'calendar' && (
         <p className="mb-2 w-full text-left text-xs text-gray-500 md:hidden">
           Swipe horizontally to see all days and times.
         </p>
       )}
 
-      {isLoading ? (
-        <div className="h-[68vh] w-full animate-pulse rounded-lg border bg-white shadow-sm md:h-[72vh]" />
-      ) : isClosureMode ? (
-        <div className="w-full">
+      {showMessage && (
+        <div className="w-full mb-4">
           <ClosureMessagePanel message={courtSettings?.closure_message_markdown ?? null} />
         </div>
-      ) : displayMode === 'list' ? (
+      )}
+
+      {isLoading ? (
+        <div className="h-[68vh] w-full animate-pulse rounded-lg border bg-white shadow-sm md:h-[72vh]" />
+      ) : showCalendar && displayMode === 'list' ? (
         <div className="w-full">
           <ListDateNav value={currentDate} onChange={setCurrentDate} minDate={today} />
           <PlayerListView
@@ -143,7 +147,7 @@ export default function PublicCalendarPage() {
             isAdmin={false}
           />
         </div>
-      ) : (
+      ) : showCalendar ? (
         <CalendarContainer
           currentDate={currentDate}
           view={view}
@@ -154,9 +158,9 @@ export default function PublicCalendarPage() {
           isAdmin={false}
           minDate={today}
         />
-      )}
+      ) : null}
       
-      {!isClosureMode && (
+      {showCalendar && (
         <>
           <CallFAB
             availableAgentPhone={availableAgentPhone}

@@ -1,68 +1,62 @@
-# Quickstart: Implement Paid Detail Status + Booking-Status Filters
+﻿# Quickstart: Implement Manual Load for Paid Detail
 
 ## Prerequisites
 
-- Active branch: `029-setup-spec-invocation`
+- Active branch: `030-create-feature-branch`
 - Active feature pointer: `specs/027-paid-detail-status-filter`
-- Baseline command: `npm run lint` (known workspace baseline issues may exist; do not introduce new ones)
+- Baseline lint can contain existing unrelated issues; do not add new issues in touched files
 
-## Step 1: Extend Types and Schemas
+## Step 1: Update Type and Schema Contracts
 
 1. Update `src/features/admin/financial-reports/types.ts`:
-- Add `DetailStatusScope`
-- Add `OutstandingBookingStatus`
-- Add filter-input interface used by `usePaidDetail`
+- Add or refine draft/applied filter state types if needed.
 
 2. Update `src/features/admin/financial-reports/schemas.ts`:
-- Add enum schema for scope
-- Add array schema for outstanding booking statuses (min 1)
-- Add composed filter-input schema
+- Ensure filter input schema supports applied filter validation.
+- Ensure outstanding status array requires at least one value.
 
-## Step 2: Extend Service Filtering Logic
-
-1. Update `src/features/admin/financial-reports/financialReportService.ts`:
-- Introduce scope-aware detail builder or extend existing `buildPaidDetail`
-- For `PAID`, keep paid-only behavior
-- For `OUTSTANDING`, include non-paid rows and filter by selected booking statuses
-- Keep summary derived from filtered rows only
-
-## Step 3: Update Hook Contract
+## Step 2: Update Hook for Manual Trigger
 
 1. Update `src/features/admin/financial-reports/usePaidDetail.ts`:
-- Accept filter input (`startDate`, `endDate`, `scope`, `outstandingStatuses`)
-- Validate with new schema
-- Keep React Query key consistent with all filter dimensions
-- Return scope-filtered rows and summary
+- Accept applied filters only.
+- Support query enablement tied to explicit load action state.
+- Keep query key based on applied filters.
 
-## Step 4: Update Paid Detail Page UI
+## Step 3: Update Page State Model
 
 1. Update `src/features/admin/financial-reports/components/PaidDetailPage.tsx`:
-- Add scope selector in existing filter section beside date controls
-- Default scope to `PAID`
-- Show booking-status multi-select only when scope = `OUTSTANDING`
-- Default selected statuses to `CONFIRMED`, `CANCELLED`, `NO_SHOW`
-- Reset page to 1 on scope/date/status changes
-- Keep existing table/status-badge rendering
+- Maintain draft filters bound to UI controls.
+- Maintain applied filters used for query.
+- Add `Load Details` button.
+- Do not fetch on initial load.
 
-## Step 5: Verify Parent Navigation Compatibility
+## Step 4: Update Page Rendering Behavior
 
-1. Confirm `AdminFinancialReportsPage` navigation to detail route still works.
-2. Confirm back-navigation from detail page still returns to reports.
+1. In `PaidDetailPage.tsx`:
+- Keep existing summary/table rendering based on loaded data only.
+- Show pre-load guidance before first load action.
+- Keep existing empty state only for post-load zero results.
+- Reset pagination to page 1 on load action.
 
-## Step 6: Validation Checklist
+## Step 5: Verify Outstanding Status Filtering
+
+1. Under OUTSTANDING mode:
+- Keep multi-select defaults.
+- Apply selected statuses only on load action.
+
+## Step 6: Manual Verification Checklist
 
 1. Open `/admin/reports/paid-detail`:
-- Scope defaults to `PAID`
-- Date controls remain functional
+- Confirm no data auto-load occurs.
+- Confirm pre-load guidance is shown.
 
-2. Switch to `OUTSTANDING`:
-- Booking-status multi-select appears
-- Defaults include all three statuses
+2. Edit date/scope/status filters without clicking load:
+- Confirm displayed results do not change.
 
-3. Toggle status selections:
-- Table and summary update accordingly
-- Pagination resets to first page
+3. Click `Load Details`:
+- Confirm table and summary update with current filter values.
+- Confirm pagination resets to page 1.
 
 4. Run lint:
 - `npm run lint`
-- Confirm no new lint errors in touched files
+- Confirm no new lint errors in files touched by this feature.

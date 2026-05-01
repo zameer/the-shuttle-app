@@ -11,12 +11,12 @@ function toISODateBoundary(value: string, mode: 'start' | 'end'): string {
   return boundary.toISOString()
 }
 
-export function usePaidDetail(input: PaidDetailFilterInput) {
+export function usePaidDetail(input: PaidDetailFilterInput, enabled: boolean) {
   const parsedInput = paidDetailFilterInputSchema.safeParse(input)
 
   return useQuery<PaidDetailOutput>({
     queryKey: ['paid-detail', input.startDate, input.endDate, input.scope, input.outstandingStatuses.join('|')],
-    enabled: parsedInput.success,
+    enabled: enabled && parsedInput.success,
     queryFn: async () => {
       if (!parsedInput.success) {
         throw new Error(parsedInput.error.issues.map((issue) => issue.message).join(', '))

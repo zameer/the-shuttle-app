@@ -1,23 +1,31 @@
-# Implementation Plan: Paid Detail Status + Booking-Status Filters
+# Implementation Plan: [FEATURE]
 
-**Branch**: `029-setup-spec-invocation` | **Date**: 2026-05-01 | **Spec**: `specs/027-paid-detail-status-filter/spec.md`
-**Input**: Feature specification from `/specs/027-paid-detail-status-filter/spec.md`
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
-Enhance the admin Paid Detail page so admins can switch between `PAID` and `OUTSTANDING` records (default `PAID`) and, when viewing `OUTSTANDING`, apply a booking-status multi-select filter (`CONFIRMED`, `CANCELLED`, `NO_SHOW`) with all three selected by default. The implementation reuses existing booking data queries, introduces typed filter contracts plus Zod URL/input validation, and extends service-layer filtering so summary cards and row data remain consistent with selected filters.
+[Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
 
-**Language/Version**: TypeScript 6.0.2  
-**Primary Dependencies**: React 19.2.4, React Router 7.x, React Query 5.99.0, Zod 4.x, date-fns 4.1.0, shadcn/ui, Tailwind CSS 3.4.17  
-**Storage**: Supabase PostgreSQL (existing `bookings` table, read-only for this feature)  
-**Testing**: `npm run lint` (required gate), manual admin flow verification per quickstart  
-**Target Platform**: Web (admin SPA in modern desktop/mobile browsers)  
-**Project Type**: Single-project frontend web application (Vite React app)  
-**Performance Goals**: Filter/scope changes should update rendered table/summary without perceptible lag (target <1s for common ranges)  
-**Constraints**: No new npm packages; no Supabase schema/migration changes; preserve existing admin route guards; maintain responsive behavior at 375/768/1280 breakpoints  
-**Scale/Scope**: One feature page (`PaidDetailPage`) plus related service/hook/type updates; expected dataset is bounded by selected date range and existing pagination
+<!--
+  ACTION REQUIRED: Replace the content in this section with the technical details
+  for the project. The structure here is presented in advisory capacity to guide
+  the iteration process.
+-->
+
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
@@ -25,82 +33,87 @@ Enhance the admin Paid Detail page so admins can switch between `PAID` and `OUTS
 
 Verify all five principles before beginning implementation:
 
-- [x] **I. Spec-First**: `specs/027-paid-detail-status-filter/spec.md` exists with prioritized user stories and acceptance scenarios.
-- [x] **II. Type Safety**: Plan introduces explicit filter/status types and Zod validation for boundary inputs (query/filter payloads); no `any` required.
-- [x] **III. Component Reusability**: UI changes remain in `src/features/admin/financial-reports/components/` and use shadcn/ui + Tailwind primitives.
-- [x] **IV. Data Integrity & Security**: Uses existing RLS-protected reads only; filtering and aggregation logic remains in hook/service layer, not view-only logic.
-- [x] **V. Responsive Design**: Filter controls (date + scope + multi-select) are specified for stacked mobile and row desktop layouts.
+- [ ] **I. Spec-First**: `specs/###-feature-name/spec.md` exists with prioritized user stories and
+  acceptance scenarios. No implementation task exists without a parent user story.
+- [ ] **II. Type Safety**: Plan does not introduce `any` types. All boundary data identified for
+  Zod validation. Typed interfaces planned for all new data contracts.
+- [ ] **III. Component Reusability**: New UI is built on shadcn/ui primitives. Shared components
+  placed under `src/components/shared/`; feature components under `src/features/`. No business
+  logic embedded in UI components.
+- [ ] **IV. Data Integrity & Security**: RLS policies documented in data-model.md for any new
+  tables. Admin routes listed for router-level guard. Price/payment logic in service/hook layer.
+- [ ] **V. Responsive Design**: Breakpoints (≥375 px, ≥768 px, ≥1280 px) addressed in contracts.
+  Calendar or list views degrade gracefully on mobile.
 
-No constitution exceptions required.
+If any gate cannot be satisfied, document an exception under "Constitution Exceptions" in this
+plan before proceeding.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/027-paid-detail-status-filter/
-├── plan.md
-├── research.md
-├── data-model.md
-├── quickstart.md
-├── contracts/
-│   ├── PaidDetailFiltersContract.ts
-│   ├── PaidDetailServiceContract.ts
-│   └── PaidDetailPageContract.ts
-└── tasks.md
+specs/[###-feature]/
+├── plan.md              # This file (/speckit.plan command output)
+├── research.md          # Phase 0 output (/speckit.plan command)
+├── data-model.md        # Phase 1 output (/speckit.plan command)
+├── quickstart.md        # Phase 1 output (/speckit.plan command)
+├── contracts/           # Phase 1 output (/speckit.plan command)
+└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
 ```
 
 ### Source Code (repository root)
+<!--
+  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
+  for this feature. Delete unused options and expand the chosen structure with
+  real paths (e.g., apps/admin, packages/something). The delivered plan must
+  not include Option labels.
+-->
 
 ```text
+# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── features/
-│   └── admin/
-│       ├── AdminFinancialReportsPage.tsx
-│       └── financial-reports/
-│           ├── schemas.ts
-│           ├── types.ts
-│           ├── usePaidDetail.ts
-│           ├── financialReportService.ts
-│           └── components/
-│               ├── PaidDetailPage.tsx
-│               └── PaidDetailStatusBadge.tsx
-├── components/
-│   └── ui/
-└── services/
-    └── supabase.ts
+├── models/
+├── services/
+├── cli/
+└── lib/
+
+tests/
+├── contract/
+├── integration/
+└── unit/
+
+# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
+
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── tests/
+
+# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
-**Structure Decision**: Keep all implementation within existing admin financial-report feature modules; no new top-level application modules are required.
-
-## Phase Overview
-
-### Phase 0: Research
-
-- Confirm semantic rules for status scope (`PAID` vs `OUTSTANDING`) and interaction with booking-status multi-select.
-- Validate URL/query-state and defaulting strategy for repeatable navigation.
-- Confirm service-level filtering and summary aggregation approach that avoids UI-only business logic.
-
-### Phase 1: Design and Contracts
-
-- Extend data model with scope/filter entities and typed payloads.
-- Define contracts for page behavior, service filtering, and hook inputs/outputs.
-- Produce implementation quickstart with ordered steps and acceptance checks.
-
-### Phase 2 (next command `/speckit.tasks`)
-
-- Generate dependency-ordered implementation tasks for route/page/hook/service updates and verification.
-
-## Post-Design Constitution Re-Check
-
-- [x] **I. Spec-First**: Design artifacts trace directly to US1 and US2 in `spec.md`.
-- [x] **II. Type Safety**: `data-model.md` and contracts define typed scope/status entities and schema validation points.
-- [x] **III. Component Reusability**: UI contract keeps composition inside existing feature components with shadcn/ui primitives.
-- [x] **IV. Data Integrity & Security**: No new tables/routes bypassing guards; filtering remains in service/hook layer.
-- [x] **V. Responsive Design**: Contract specifies control behavior across mobile/tablet/desktop breakpoints.
-
-Result: PASS (no exceptions required).
+**Structure Decision**: [Document the selected structure and reference the real
+directories captured above]
 
 ## Complexity Tracking
 
-No constitution violations or added architectural complexity requiring justification.
+> **Fill ONLY if Constitution Check has violations that must be justified**
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
