@@ -44,7 +44,7 @@ export default function PublicLayout() {
         </div>
       </header>
 
-      <SponsorsSection sponsors={SPONSORS} />
+      {/* <SponsorsSection sponsors={SPONSORS} /> */}
 
       <RulesBanner rules={rules} onViewFullRules={() => setRulesOpen(true)} />
 
