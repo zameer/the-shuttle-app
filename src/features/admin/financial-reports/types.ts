@@ -1,5 +1,7 @@
 export type PaymentBucket = 'PAID' | 'PENDING'
 export type ImpactType = 'NO_SHOW' | 'CANCELLED'
+export type DetailStatusScope = 'PAID' | 'OUTSTANDING'
+export type OutstandingBookingStatus = 'CONFIRMED' | 'CANCELLED' | 'NO_SHOW'
 
 export interface ReportDateRangeInput {
   startDate: string
@@ -106,4 +108,9 @@ export interface PaidDetailSummary {
 export interface PaidDetailOutput {
   rows: PaidDetailRow[]
   summary: PaidDetailSummary
+}
+
+export interface PaidDetailFilterInput extends ReportDateRangeInput {
+  scope: DetailStatusScope
+  outstandingStatuses: OutstandingBookingStatus[]
 }

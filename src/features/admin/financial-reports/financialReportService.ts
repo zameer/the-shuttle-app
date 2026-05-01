@@ -1,10 +1,13 @@
 import { parseISO } from 'date-fns'
 import type { BookingRowSchema } from './schemas'
 import type {
+  DetailStatusScope,
   FinancialReportOutput,
   NormalizedFinancialBooking,
+  OutstandingBookingStatus,
   OutstandingPendingPlayerRecord,
   PaidBreakdownOutput,
+  PaidDetailFilterInput,
   PaidDetailOutput,
   PaymentBreakdownEntry,
   PaymentBucket,
@@ -249,9 +252,31 @@ export function buildFinancialReport(rows: BookingRowSchema[]): FinancialReportO
   }
 }
 
-export function buildPaidDetail(rows: NormalizedFinancialBooking[]): PaidDetailOutput {
-  const filtered = rows
-    .filter((row) => row.paymentBucket === 'PAID' && isActiveFinancialStatus(row.bookingStatus))
+function isSelectedOutstandingStatus(
+  status: NormalizedFinancialBooking['bookingStatus'],
+  selected: OutstandingBookingStatus[],
+): boolean {
+  if (status !== 'CONFIRMED' && status !== 'CANCELLED' && status !== 'NO_SHOW') {
+    return false
+  }
+
+  return selected.includes(status)
+}
+
+function applyScopeFilter(
+  rows: NormalizedFinancialBooking[],
+  scope: DetailStatusScope,
+  outstandingStatuses: OutstandingBookingStatus[],
+): NormalizedFinancialBooking[] {
+  if (scope === 'PAID') {
+    return rows.filter((row) => row.paymentBucket === 'PAID' && isActiveFinancialStatus(row.bookingStatus))
+  }
+
+  return rows.filter((row) => row.paymentBucket !== 'PAID' && isSelectedOutstandingStatus(row.bookingStatus, outstandingStatuses))
+}
+
+export function buildPaidDetailByFilter(rows: NormalizedFinancialBooking[], input: PaidDetailFilterInput): PaidDetailOutput {
+  const filtered = applyScopeFilter(rows, input.scope, input.outstandingStatuses)
     .sort((a, b) => b.slotStart.localeCompare(a.slotStart))
 
   const totalAmount = round2(filtered.reduce((sum, row) => sum + row.amount, 0))
@@ -265,4 +290,13 @@ export function buildPaidDetail(rows: NormalizedFinancialBooking[]): PaidDetailO
       totalBookings: filtered.length,
     },
   }
+}
+
+export function buildPaidDetail(rows: NormalizedFinancialBooking[]): PaidDetailOutput {
+  return buildPaidDetailByFilter(rows, {
+    startDate: '',
+    endDate: '',
+    scope: 'PAID',
+    outstandingStatuses: ['CONFIRMED', 'CANCELLED', 'NO_SHOW'],
+  })
 }

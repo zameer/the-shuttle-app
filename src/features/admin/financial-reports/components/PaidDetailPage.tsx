@@ -6,9 +6,11 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePaidDetail } from '../usePaidDetail'
 import { paidDetailSearchParamsSchema } from '../schemas'
+import type { DetailStatusScope, OutstandingBookingStatus } from '../types'
 import PaidDetailStatusBadge from './PaidDetailStatusBadge'
 
 const PAGE_SIZE = 15
+const DEFAULT_OUTSTANDING_STATUSES: OutstandingBookingStatus[] = ['CONFIRMED', 'CANCELLED', 'NO_SHOW']
 
 function todayString(): string {
   return format(new Date(), 'yyyy-MM-dd')
@@ -41,9 +43,16 @@ export default function PaidDetailPage() {
 
   const [startDate, setStartDate] = useState(initialStart)
   const [endDate, setEndDate] = useState(initialEnd)
+  const [scope, setScope] = useState<DetailStatusScope>('PAID')
+  const [outstandingStatuses, setOutstandingStatuses] = useState<OutstandingBookingStatus[]>(DEFAULT_OUTSTANDING_STATUSES)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { data, isLoading, error } = usePaidDetail({ startDate, endDate })
+  const { data, isLoading, error } = usePaidDetail({
+    startDate,
+    endDate,
+    scope,
+    outstandingStatuses,
+  })
 
   const rows = data?.rows ?? []
   const summary = data?.summary
@@ -64,6 +73,26 @@ export default function PaidDetailPage() {
     setCurrentPage(1)
   }
 
+  function handleScopeChange(value: DetailStatusScope) {
+    setScope(value)
+    setCurrentPage(1)
+  }
+
+  function toggleOutstandingStatus(status: OutstandingBookingStatus) {
+    setOutstandingStatuses((previous) => {
+      const next = previous.includes(status)
+        ? previous.filter((value) => value !== status)
+        : [...previous, status]
+
+      if (next.length === 0) {
+        return previous
+      }
+
+      setCurrentPage(1)
+      return next
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -77,9 +106,9 @@ export default function PaidDetailPage() {
         </div>
       </div>
 
-      {/* Date range filter */}
+      {/* Date range and scope filter */}
       <section className="rounded-xl border bg-white p-4 shadow-sm">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm font-medium text-gray-700">
             Start Date
             <input
@@ -100,29 +129,67 @@ export default function PaidDetailPage() {
             />
           </label>
 
+          <label className="text-sm font-medium text-gray-700">
+            Scope
+            <select
+              value={scope}
+              onChange={(e) => handleScopeChange(e.target.value as DetailStatusScope)}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="PAID">PAID</option>
+              <option value="OUTSTANDING">OUTSTANDING</option>
+            </select>
+          </label>
+
           <div className="rounded-md border border-green-100 bg-green-50 px-3 py-2 text-xs text-green-700 flex items-center">
-            Showing individual paid bookings only. All players included.
+            {scope === 'PAID'
+              ? 'Showing individual paid bookings. All players included.'
+              : 'Showing outstanding bookings. Booking-status filter is active.'}
           </div>
         </div>
+
+        {scope === 'OUTSTANDING' && (
+          <div className="mt-3 rounded-md border border-amber-100 bg-amber-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Outstanding booking status filter</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {DEFAULT_OUTSTANDING_STATUSES.map((status) => {
+                const selected = outstandingStatuses.includes(status)
+
+                return (
+                  <Button
+                    key={status}
+                    type="button"
+                    size="sm"
+                    variant={selected ? 'default' : 'outline'}
+                    onClick={() => toggleOutstandingStatus(status)}
+                  >
+                    {status}
+                  </Button>
+                )
+              })}
+            </div>
+            <p className="mt-2 text-xs text-amber-700">At least one status must remain selected.</p>
+          </div>
+        )}
       </section>
 
       {/* Summary cards */}
       {summary && (
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <SummaryCard
-            title="Paid Amount"
+            title={scope === 'PAID' ? 'Paid Amount' : 'Outstanding Amount'}
             value={`LKR ${summary.totalAmount.toLocaleString()}`}
-            subtitle={`${summary.totalHours.toFixed(2)} paid hours`}
+            subtitle={`${summary.totalHours.toFixed(2)} ${scope === 'PAID' ? 'paid' : 'outstanding'} hours`}
           />
           <SummaryCard
-            title="Paid Hours"
+            title={scope === 'PAID' ? 'Paid Hours' : 'Outstanding Hours'}
             value={`${summary.totalHours.toFixed(2)} hrs`}
-            subtitle="Total paid booking hours"
+            subtitle={scope === 'PAID' ? 'Total paid booking hours' : 'Total outstanding booking hours'}
           />
           <SummaryCard
             title="Bookings"
             value={String(summary.totalBookings)}
-            subtitle="individual paid bookings"
+            subtitle={`individual ${scope === 'PAID' ? 'paid' : 'outstanding'} bookings`}
           />
         </section>
       )}
@@ -179,7 +246,9 @@ export default function PaidDetailPage() {
 
           {rows.length === 0 && !isLoading && (
             <div className="py-12 text-center text-sm text-muted-foreground">
-              No paid bookings for this period.
+              {scope === 'PAID'
+                ? 'No paid bookings for this period.'
+                : 'No outstanding bookings for this period and selected statuses.'}
             </div>
           )}
         </section>
@@ -189,7 +258,7 @@ export default function PaidDetailPage() {
       {rows.length > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Showing {startIndex + 1}–{endIndex} of {rows.length} paid bookings
+            Showing {startIndex + 1}–{endIndex} of {rows.length} {scope === 'PAID' ? 'paid' : 'outstanding'} bookings
           </p>
           <div className="flex items-center gap-2">
             <Button
