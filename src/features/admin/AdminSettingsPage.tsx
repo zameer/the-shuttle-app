@@ -54,7 +54,11 @@ export default function AdminSettingsPage() {
       setDefaultRate(settings.default_hourly_rate)
       setRatesInput(settings.available_rates.join(', '))
       setTermsText(settings.terms_and_conditions ?? '')
-      setPlayerDisplayMode(settings.player_display_mode === 'closure_message' ? 'closure_message' : 'calendar')
+      setPlayerDisplayMode(
+        settings.player_display_mode === 'closure_message' ? 'closure_message'
+        : settings.player_display_mode === 'both' ? 'both'
+        : 'calendar'
+      )
       setClosureMessageMarkdown(settings.closure_message_markdown ?? '')
     }
   }, [settings])
@@ -110,8 +114,8 @@ export default function AdminSettingsPage() {
 
   const handleSavePlayerDisplay = async () => {
     setClosureValidationError(null)
-    if (playerDisplayMode === 'closure_message' && closureMessageMarkdown.trim().length === 0) {
-      setClosureValidationError('Closure message is required when closure mode is active.')
+    if ((playerDisplayMode === 'closure_message' || playerDisplayMode === 'both') && closureMessageMarkdown.trim().length === 0) {
+      setClosureValidationError('Notice message content is required when Message or Both mode is selected.')
       return
     }
 
@@ -313,7 +317,7 @@ export default function AdminSettingsPage() {
               Switch the public player page between normal calendar mode and a full-court closure message.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <button
                 type="button"
                 onClick={() => setPlayerDisplayMode('calendar')}
@@ -337,6 +341,18 @@ export default function AdminSettingsPage() {
               >
                 <p className="font-semibold">Closure Message</p>
                 <p className="text-xs mt-1 text-gray-500">Players see a formatted unavailable notice only.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlayerDisplayMode('both')}
+                className={`rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                  playerDisplayMode === 'both'
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <p className="font-semibold">Both</p>
+                <p className="text-xs mt-1 text-gray-500">Players see the notice message above the calendar.</p>
               </button>
             </div>
 

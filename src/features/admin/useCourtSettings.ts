@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/services/supabase'
 
-export type PlayerDisplayMode = 'calendar' | 'closure_message'
+export type PlayerDisplayMode = 'calendar' | 'closure_message' | 'both'
 
 export interface CourtSettings {
   id: number

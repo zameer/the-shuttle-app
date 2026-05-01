@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { usePaidDetail } from '../usePaidDetail'
 import { paidDetailSearchParamsSchema } from '../schemas'
-import type { DetailStatusScope, OutstandingBookingStatus } from '../types'
+import type { DetailStatusScope, OutstandingBookingStatus, PaidDetailDraftFilters, PaidDetailFilterInput } from '../types'
 import PaidDetailStatusBadge from './PaidDetailStatusBadge'
 
 const PAGE_SIZE = 15
@@ -41,18 +41,20 @@ export default function PaidDetailPage() {
   const initialStart = parsed.success && parsed.data.start ? parsed.data.start : startOfMonthString()
   const initialEnd = parsed.success && parsed.data.end ? parsed.data.end : todayString()
 
-  const [startDate, setStartDate] = useState(initialStart)
-  const [endDate, setEndDate] = useState(initialEnd)
-  const [scope, setScope] = useState<DetailStatusScope>('PAID')
-  const [outstandingStatuses, setOutstandingStatuses] = useState<OutstandingBookingStatus[]>(DEFAULT_OUTSTANDING_STATUSES)
+  const [draftFilters, setDraftFilters] = useState<PaidDetailDraftFilters>({
+    startDate: initialStart,
+    endDate: initialEnd,
+    scope: 'PAID',
+    outstandingStatuses: DEFAULT_OUTSTANDING_STATUSES,
+  })
+  const [appliedFilters, setAppliedFilters] = useState<PaidDetailFilterInput | null>(null)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { data, isLoading, error } = usePaidDetail({
-    startDate,
-    endDate,
-    scope,
-    outstandingStatuses,
-  })
+  const { data, isLoading, error } = usePaidDetail(
+    appliedFilters ?? { startDate: initialStart, endDate: initialEnd, scope: 'PAID', outstandingStatuses: DEFAULT_OUTSTANDING_STATUSES },
+    hasLoadedOnce,
+  )
 
   const rows = data?.rows ?? []
   const summary = data?.summary
@@ -64,33 +66,31 @@ export default function PaidDetailPage() {
   const pagedRows = rows.slice(startIndex, endIndex)
 
   function handleStartChange(value: string) {
-    setStartDate(value)
-    setCurrentPage(1)
+    setDraftFilters((prev) => ({ ...prev, startDate: value }))
   }
 
   function handleEndChange(value: string) {
-    setEndDate(value)
-    setCurrentPage(1)
+    setDraftFilters((prev) => ({ ...prev, endDate: value }))
   }
 
   function handleScopeChange(value: DetailStatusScope) {
-    setScope(value)
-    setCurrentPage(1)
+    setDraftFilters((prev) => ({ ...prev, scope: value }))
   }
 
   function toggleOutstandingStatus(status: OutstandingBookingStatus) {
-    setOutstandingStatuses((previous) => {
-      const next = previous.includes(status)
-        ? previous.filter((value) => value !== status)
-        : [...previous, status]
-
-      if (next.length === 0) {
-        return previous
-      }
-
-      setCurrentPage(1)
-      return next
+    setDraftFilters((prev) => {
+      const next = prev.outstandingStatuses.includes(status)
+        ? prev.outstandingStatuses.filter((s) => s !== status)
+        : [...prev.outstandingStatuses, status]
+      if (next.length === 0) return prev
+      return { ...prev, outstandingStatuses: next }
     })
+  }
+
+  function handleLoadDetails() {
+    setAppliedFilters({ ...draftFilters })
+    setHasLoadedOnce(true)
+    setCurrentPage(1)
   }
 
   return (
@@ -113,7 +113,7 @@ export default function PaidDetailPage() {
             Start Date
             <input
               type="date"
-              value={startDate}
+              value={draftFilters.startDate}
               onChange={(e) => handleStartChange(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
@@ -123,7 +123,7 @@ export default function PaidDetailPage() {
             End Date
             <input
               type="date"
-              value={endDate}
+              value={draftFilters.endDate}
               onChange={(e) => handleEndChange(e.target.value)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
@@ -132,7 +132,7 @@ export default function PaidDetailPage() {
           <label className="text-sm font-medium text-gray-700">
             Scope
             <select
-              value={scope}
+              value={draftFilters.scope}
               onChange={(e) => handleScopeChange(e.target.value as DetailStatusScope)}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
@@ -141,19 +141,19 @@ export default function PaidDetailPage() {
             </select>
           </label>
 
-          <div className="rounded-md border border-green-100 bg-green-50 px-3 py-2 text-xs text-green-700 flex items-center">
-            {scope === 'PAID'
-              ? 'Showing individual paid bookings. All players included.'
-              : 'Showing outstanding bookings. Booking-status filter is active.'}
+          <div className="flex items-end">
+            <Button type="button" className="w-full" onClick={handleLoadDetails}>
+              Load Details
+            </Button>
           </div>
         </div>
 
-        {scope === 'OUTSTANDING' && (
+        {draftFilters.scope === 'OUTSTANDING' && (
           <div className="mt-3 rounded-md border border-amber-100 bg-amber-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Outstanding booking status filter</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {DEFAULT_OUTSTANDING_STATUSES.map((status) => {
-                const selected = outstandingStatuses.includes(status)
+                const selected = draftFilters.outstandingStatuses.includes(status)
 
                 return (
                   <Button
@@ -173,92 +173,101 @@ export default function PaidDetailPage() {
         )}
       </section>
 
-      {/* Summary cards */}
-      {summary && (
+      {/* Pre-load guidance */}
+      {!hasLoadedOnce && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50 p-6 text-center text-sm text-blue-700">
+          Set your filters above and click <strong>Load Details</strong> to view booking records.
+        </div>
+      )}
+
+      {/* Summary cards — shown only after first load */}
+      {hasLoadedOnce && summary && (
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <SummaryCard
-            title={scope === 'PAID' ? 'Paid Amount' : 'Outstanding Amount'}
+            title={draftFilters.scope === 'PAID' ? 'Paid Amount' : 'Outstanding Amount'}
             value={`LKR ${summary.totalAmount.toLocaleString()}`}
-            subtitle={`${summary.totalHours.toFixed(2)} ${scope === 'PAID' ? 'paid' : 'outstanding'} hours`}
+            subtitle={`${summary.totalHours.toFixed(2)} ${appliedFilters?.scope === 'PAID' ? 'paid' : 'outstanding'} hours`}
           />
           <SummaryCard
-            title={scope === 'PAID' ? 'Paid Hours' : 'Outstanding Hours'}
+            title={appliedFilters?.scope === 'PAID' ? 'Paid Hours' : 'Outstanding Hours'}
             value={`${summary.totalHours.toFixed(2)} hrs`}
-            subtitle={scope === 'PAID' ? 'Total paid booking hours' : 'Total outstanding booking hours'}
+            subtitle={appliedFilters?.scope === 'PAID' ? 'Total paid booking hours' : 'Total outstanding booking hours'}
           />
           <SummaryCard
             title="Bookings"
             value={String(summary.totalBookings)}
-            subtitle={`individual ${scope === 'PAID' ? 'paid' : 'outstanding'} bookings`}
+            subtitle={`individual ${appliedFilters?.scope === 'PAID' ? 'paid' : 'outstanding'} bookings`}
           />
         </section>
       )}
 
-      {/* Loading / Error / Table */}
-      {isLoading ? (
-        <div className="flex items-center justify-center rounded-xl border bg-white p-12 shadow-sm">
-          <Loader2 className="h-7 w-7 animate-spin text-blue-500" />
-        </div>
-      ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error instanceof Error ? error.message : 'Failed to load paid detail'}
-        </div>
-      ) : (
-        <section className="rounded-xl border bg-white overflow-x-auto shadow-sm">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Time</th>
-                <th className="px-4 py-3">Player</th>
-                <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3">Confirmation</th>
-                <th className="px-4 py-3">Payment</th>
-                <th className="px-4 py-3 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedRows.map((row) => (
-                <tr key={row.bookingId} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {format(parseISO(row.slotStart), 'dd MMM yyyy')}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {format(parseISO(row.slotStart), 'HH:mm')}
-                    {' – '}
-                    {format(parseISO(row.slotEnd), 'HH:mm')}
-                  </td>
-                  <td className="px-4 py-3">{row.playerName ?? '—'}</td>
-                  <td className="px-4 py-3">{row.playerPhoneNumber ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <PaidDetailStatusBadge type="booking" status={row.bookingStatus} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <PaidDetailStatusBadge type="payment" status={row.paymentBucket} />
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    LKR {row.amount.toLocaleString()}
-                  </td>
+      {/* Loading / Error / Table — shown only after first load */}
+      {hasLoadedOnce && (
+        isLoading ? (
+          <div className="flex items-center justify-center rounded-xl border bg-white p-12 shadow-sm">
+            <Loader2 className="h-7 w-7 animate-spin text-blue-500" />
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error instanceof Error ? error.message : 'Failed to load paid detail'}
+          </div>
+        ) : (
+          <section className="rounded-xl border bg-white overflow-x-auto shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">Player</th>
+                  <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Confirmation</th>
+                  <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pagedRows.map((row) => (
+                  <tr key={row.bookingId} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {format(parseISO(row.slotStart), 'dd MMM yyyy')}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {format(parseISO(row.slotStart), 'HH:mm')}
+                      {' – '}
+                      {format(parseISO(row.slotEnd), 'HH:mm')}
+                    </td>
+                    <td className="px-4 py-3">{row.playerName ?? '—'}</td>
+                    <td className="px-4 py-3">{row.playerPhoneNumber ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <PaidDetailStatusBadge type="booking" status={row.bookingStatus} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <PaidDetailStatusBadge type="payment" status={row.paymentBucket} />
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      LKR {row.amount.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-          {rows.length === 0 && !isLoading && (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              {scope === 'PAID'
-                ? 'No paid bookings for this period.'
-                : 'No outstanding bookings for this period and selected statuses.'}
-            </div>
-          )}
-        </section>
+            {rows.length === 0 && !isLoading && (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                {appliedFilters?.scope === 'PAID'
+                  ? 'No paid bookings for this period.'
+                  : 'No outstanding bookings for this period and selected statuses.'}
+              </div>
+            )}
+          </section>
+        )
       )}
 
-      {/* Pagination */}
-      {rows.length > 0 && (
+      {/* Pagination — shown only after first load */}
+      {hasLoadedOnce && rows.length > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Showing {startIndex + 1}–{endIndex} of {rows.length} {scope === 'PAID' ? 'paid' : 'outstanding'} bookings
+            Showing {startIndex + 1}–{endIndex} of {rows.length} {appliedFilters?.scope === 'PAID' ? 'paid' : 'outstanding'} bookings
           </p>
           <div className="flex items-center gap-2">
             <Button
