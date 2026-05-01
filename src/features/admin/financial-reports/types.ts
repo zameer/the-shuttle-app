@@ -114,3 +114,17 @@ export interface PaidDetailFilterInput extends ReportDateRangeInput {
   scope: DetailStatusScope
   outstandingStatuses: OutstandingBookingStatus[]
 }
+
+export interface PaidDetailDraftFilters {
+  startDate: string
+  endDate: string
+  scope: DetailStatusScope
+  outstandingStatuses: OutstandingBookingStatus[]
+}
+
+export interface PaidDetailAppliedFilters {
+  startDate: string
+  endDate: string
+  scope: DetailStatusScope
+  outstandingStatuses: OutstandingBookingStatus[]
+}
