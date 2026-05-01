@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { endOfDay, startOfDay } from 'date-fns'
 import { supabase } from '@/services/supabase'
-import { bookingsResponseSchema, reportDateRangeSchema } from './schemas'
-import type { ReportDateRangeInput, PaidDetailOutput } from './types'
-import { normalizeFinancialRows, buildPaidDetail } from './financialReportService'
+import { bookingsResponseSchema, paidDetailFilterInputSchema } from './schemas'
+import type { PaidDetailFilterInput, PaidDetailOutput } from './types'
+import { normalizeFinancialRows, buildPaidDetailByFilter } from './financialReportService'
 
 function toISODateBoundary(value: string, mode: 'start' | 'end'): string {
   const date = new Date(value)
@@ -11,18 +11,18 @@ function toISODateBoundary(value: string, mode: 'start' | 'end'): string {
   return boundary.toISOString()
 }
 
-export function usePaidDetail(input: ReportDateRangeInput) {
-  const parsedInput = reportDateRangeSchema.safeParse(input)
+export function usePaidDetail(input: PaidDetailFilterInput) {
+  const parsedInput = paidDetailFilterInputSchema.safeParse(input)
 
   return useQuery<PaidDetailOutput>({
-    queryKey: ['paid-detail', input.startDate, input.endDate],
+    queryKey: ['paid-detail', input.startDate, input.endDate, input.scope, input.outstandingStatuses.join('|')],
     enabled: parsedInput.success,
     queryFn: async () => {
       if (!parsedInput.success) {
         throw new Error(parsedInput.error.issues.map((issue) => issue.message).join(', '))
       }
 
-      const { startDate, endDate } = parsedInput.data
+      const { startDate, endDate, scope, outstandingStatuses } = parsedInput.data
 
       const { data, error } = await supabase
         .from('bookings')
@@ -40,7 +40,12 @@ export function usePaidDetail(input: ReportDateRangeInput) {
         throw new Error('Unexpected booking payload shape for paid detail')
       }
 
-      return buildPaidDetail(normalizeFinancialRows(parsedRows.data))
+      return buildPaidDetailByFilter(normalizeFinancialRows(parsedRows.data), {
+        startDate,
+        endDate,
+        scope,
+        outstandingStatuses,
+      })
     },
   })
 }
