@@ -15,6 +15,7 @@ import AdminLogin from './features/auth/AdminLogin'
 import AdminDashboardPage from './features/admin/AdminDashboardPage'
 import AdminCalendarPage from './features/admin/AdminCalendarPage'
 import AdminFinancialReportsPage from './features/admin/AdminFinancialReportsPage'
+import PaidDetailPage from './features/admin/financial-reports/components/PaidDetailPage'
 import BookingAgentConfigPage from './features/admin/booking-agents/BookingAgentConfigPage'
 import CallbackRequestsPage from './features/admin/callback-requests/CallbackRequestsPage'
 
@@ -56,6 +57,10 @@ const router = createBrowserRouter([
         children: [
           {
             index: true,
+            element: <AdminCalendarPage />
+          },
+          {
+            path: 'dashboard',
             element: <AdminDashboardPage />
           },
           {
@@ -69,6 +74,10 @@ const router = createBrowserRouter([
           {
             path: 'reports',
             element: <AdminFinancialReportsPage />
+          },
+          {
+            path: 'reports/paid-detail',
+            element: <PaidDetailPage />
           },
           {
             path: 'booking-agents',

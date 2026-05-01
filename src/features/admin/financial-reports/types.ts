@@ -93,3 +93,17 @@ export interface FinancialReportOutput {
     paidHoursMatches: boolean
   }
 }
+
+// PaidDetailRow is a semantic alias — one row per individual paid booking
+export type PaidDetailRow = NormalizedFinancialBooking
+
+export interface PaidDetailSummary {
+  totalAmount: number
+  totalHours: number
+  totalBookings: number
+}
+
+export interface PaidDetailOutput {
+  rows: PaidDetailRow[]
+  summary: PaidDetailSummary
+}

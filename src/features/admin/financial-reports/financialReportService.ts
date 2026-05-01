@@ -5,6 +5,7 @@ import type {
   NormalizedFinancialBooking,
   OutstandingPendingPlayerRecord,
   PaidBreakdownOutput,
+  PaidDetailOutput,
   PaymentBreakdownEntry,
   PaymentBucket,
   RevenueLossBucket,
@@ -245,5 +246,23 @@ export function buildFinancialReport(rows: BookingRowSchema[]): FinancialReportO
     outstandingPending,
     revenueLoss,
     reconciliation,
+  }
+}
+
+export function buildPaidDetail(rows: NormalizedFinancialBooking[]): PaidDetailOutput {
+  const filtered = rows
+    .filter((row) => row.paymentBucket === 'PAID' && isActiveFinancialStatus(row.bookingStatus))
+    .sort((a, b) => b.slotStart.localeCompare(a.slotStart))
+
+  const totalAmount = round2(filtered.reduce((sum, row) => sum + row.amount, 0))
+  const totalHours = round2(filtered.reduce((sum, row) => sum + row.durationHours, 0))
+
+  return {
+    rows: filtered,
+    summary: {
+      totalAmount,
+      totalHours,
+      totalBookings: filtered.length,
+    },
   }
 }

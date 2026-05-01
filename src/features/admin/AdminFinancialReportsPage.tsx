@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { format, startOfMonth } from 'date-fns'
-import { Loader2 } from 'lucide-react'
+import { ExternalLink, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useFinancialReport } from '@/features/admin/financial-reports/useFinancialReport'
-import PaymentBreakdownSection from '@/features/admin/financial-reports/components/PaymentBreakdownSection'
-import PaidBreakdownModal from '@/features/admin/financial-reports/components/PaidBreakdownModal'
 import OutstandingPendingSection from '@/features/admin/financial-reports/components/OutstandingPendingSection'
 import RevenueImpactSection from '@/features/admin/financial-reports/components/RevenueImpactSection'
 
@@ -18,23 +18,12 @@ function SummaryCard({ title, value, subtitle }: { title: string; value: string;
 }
 
 export default function AdminFinancialReportsPage() {
+  const navigate = useNavigate()
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'))
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [isPaidModalOpen, setIsPaidModalOpen] = useState(false)
-  const [paidPage, setPaidPage] = useState(1)
-  const paidPageSize = 8
 
   const reportInput = useMemo(() => ({ startDate, endDate }), [startDate, endDate])
   const { data: report, isLoading, error } = useFinancialReport(reportInput)
-
-  const paidEntries = report?.paidBreakdown.entries ?? []
-  const totalPaidPages = Math.max(1, Math.ceil(paidEntries.length / paidPageSize))
-  const activePaidPage = Math.min(Math.max(paidPage, 1), totalPaidPages)
-
-  const handleOpenPaidBreakdown = () => {
-    setPaidPage(1)
-    setIsPaidModalOpen(true)
-  }
 
   return (
     <div className="space-y-6">
@@ -52,7 +41,6 @@ export default function AdminFinancialReportsPage() {
               value={startDate}
               onChange={(event) => {
                 setStartDate(event.target.value)
-                setPaidPage(1)
               }}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
@@ -65,7 +53,6 @@ export default function AdminFinancialReportsPage() {
               value={endDate}
               onChange={(event) => {
                 setEndDate(event.target.value)
-                setPaidPage(1)
               }}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
@@ -121,20 +108,31 @@ export default function AdminFinancialReportsPage() {
             fallbackAmountCount={report.revenueLoss.fallbackAmountCount}
           />
 
-          <PaymentBreakdownSection
-            paidEntryCount={report.paidBreakdown.totalEntries}
-            onOpenPaidBreakdown={handleOpenPaidBreakdown}
-          />
+          <section className="rounded-xl border bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-green-700">Paid Breakdown</h3>
+                <p className="text-sm text-gray-600">
+                  View individual paid bookings with confirmation and payment status.
+                </p>
+                <p className="text-xs text-gray-500">
+                  {report.paidBreakdown.totalEntries > 0
+                    ? `${report.paidBreakdown.totalEntries} paid ${report.paidBreakdown.totalEntries === 1 ? 'entry' : 'entries'} available.`
+                    : 'No paid entries were found for the selected date range.'}
+                </p>
+              </div>
 
-          <PaidBreakdownModal
-            open={isPaidModalOpen}
-            onOpenChange={setIsPaidModalOpen}
-            entries={report.paidBreakdown.entries}
-            currentPage={activePaidPage}
-            pageSize={paidPageSize}
-            onPageChange={setPaidPage}
-            summary={report.summary}
-          />
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(`/admin/reports/paid-detail?start=${startDate}&end=${endDate}`)
+                }
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Paid Detail
+              </Button>
+            </div>
+          </section>
         </>
       ) : (
         <div className="rounded-xl border bg-white p-4 text-sm text-gray-500">No report data available.</div>

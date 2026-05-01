@@ -1,0 +1,115 @@
+# Implementation Plan: Admin Calendar Landing & Paid Report Detail
+
+**Branch**: `026-admin-calendar-paid-detail` | **Date**: 2026-05-01 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/026-admin-calendar-paid-detail/spec.md`
+
+## Summary
+
+Two discrete changes to the admin area:
+
+1. **Calendar as Landing Page** — the `/admin` index route redirects from `AdminDashboardPage` to `AdminCalendarPage`. The Dashboard is demoted to `/admin/dashboard` and removed from the primary navigation bar. All existing calendar functionality is preserved.
+
+2. **Paid Detail Page** — a new separate page at `/admin/reports/paid-detail` replaces the grouped-by-player paid modal with a per-booking row table. Each row shows: booking date, start/end time, player name, contact, confirmation status, and payment status. The page carries its own independent date range picker (defaulting to the parent report range via URL query params), a summary header, client-side pagination (15 rows/page), and a back link to `/admin/reports`. Data comes from extending `financialReportService.ts` with a `buildPaidDetail()` function and a new `usePaidDetail` hook — no schema changes required.
+
+## Technical Context
+
+**Language/Version**: TypeScript 6.0.2  
+**Primary Dependencies**: React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, react-router-dom 7.x, date-fns 4.1.0, lucide-react 1.8, Zod 4.x, Supabase JS 2.103.0  
+**Storage**: Supabase PostgreSQL with RLS — read-only; existing `bookings` table (same column set as `useFinancialReport`); no new tables or migrations  
+**Testing**: `npm test` (unit/integration), `npm run lint` (ESLint)  
+**Target Platform**: Web browser — desktop-first (=1280 px primary); responsive to =375 px  
+**Project Type**: Web application (React SPA)  
+**Performance Goals**: Client-side pagination renders page transitions < 100 ms; initial data fetch mirrors existing `useFinancialReport` query latency  
+**Constraints**: No Supabase schema changes; no new npm packages; admin-route guard required for new paid detail route; existing booking management features must remain fully functional  
+**Scale/Scope**: Admin-only feature; = ~500 paid bookings per rolling year; 15 rows/page
+
+## Constitution Check
+
+*GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design.*
+
+- [x] **I. Spec-First**: `specs/026-admin-calendar-paid-detail/spec.md` exists with two prioritized user stories (P1/P1) and independently testable acceptance scenarios. All implementation tasks will derive from those user stories.
+- [x] **II. Type Safety**: No `any` types introduced. Two new interfaces (`PaidDetailRow`, `PaidDetailOutput`) defined in `types.ts`. New Zod schema validates date-range URL search params. Boundary data from Supabase passes through the existing `bookingsResponseSchema`.
+- [x] **III. Component Reusability**: `PaidDetailPage` and `PaidDetailStatusBadge` placed under `src/features/admin/financial-reports/`. Business logic (`buildPaidDetail`, `usePaidDetail`) lives in the service/hook layer. shadcn/ui `Button`, `Badge`, and table primitives used for UI.
+- [x] **IV. Data Integrity & Security**: No new tables or RLS policies needed. New route `/admin/reports/paid-detail` is nested inside `AdminProtectedRoute` — same guard as all other admin routes. Payment calculations remain in `financialReportService.ts`.
+- [x] **V. Responsive Design**: Desktop table with horizontal scroll on small screens (=375 px). Summary header and pagination controls stack vertically on mobile. Back navigation button visible at all breakpoints.
+
+No constitution exceptions required.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/026-admin-calendar-paid-detail/
++-- plan.md          ? this file
++-- research.md      ? Phase 0 output
++-- data-model.md    ? Phase 1 output
++-- quickstart.md    ? Phase 1 output
++-- contracts/       ? Phase 1 output
++-- tasks.md         ? /speckit.tasks output (NOT created by /speckit.plan)
+```
+
+### Source Code (repository root)
+
+```text
+src/
++-- App.tsx                                              # MODIFIED — route changes (US1 + US2)
++-- layouts/
+¦   +-- AdminLayout.tsx                                 # MODIFIED — nav: Calendar first, Dashboard demoted (US1)
++-- features/
+    +-- admin/
+        +-- AdminCalendarPage.tsx                       # UNCHANGED (now served at / and /calendar)
+        +-- AdminDashboardPage.tsx                      # UNCHANGED content; moved to /admin/dashboard route
+        +-- AdminFinancialReportsPage.tsx               # MODIFIED — add "View Paid Detail" button + pass date range (US2)
+        +-- financial-reports/
+            +-- types.ts                                # MODIFIED — add PaidDetailRow, PaidDetailOutput
+            +-- schemas.ts                              # MODIFIED — add paidDetailSearchParamsSchema
+            +-- financialReportService.ts               # MODIFIED — add buildPaidDetail()
+            +-- usePaidDetail.ts                        # NEW — React Query hook
+            +-- components/
+                +-- PaidDetailPage.tsx                  # NEW — page component (US2)
+                +-- PaidDetailStatusBadge.tsx           # NEW — shared status badge (US2)
+```
+
+**Structure Decision**: Single React SPA with existing Vite/React project structure. No backend or test directory changes required — data access reuses the existing Supabase client and `bookings` query pattern.
+
+## Phase 0: Research
+
+*See [research.md](./research.md) for full findings.*
+
+All NEEDS CLARIFICATION items resolved — none were identified during Technical Context fill. Key decisions:
+
+| Topic | Decision |
+|-------|----------|
+| Page vs modal for paid detail | **Separate page** at `/admin/reports/paid-detail` — enables tabular layout, deep linking, and natural back navigation |
+| Date range handoff from Reports ? Detail | URL query params (`?start=YYYY-MM-DD&end=YYYY-MM-DD`) preserve the parent range when navigating; detail view holds its own independent state |
+| Data source for per-booking rows | Extend `financialReportService.ts` with `buildPaidDetail()`; reuse existing `normalizeFinancialRows()` output; no new Supabase query columns needed |
+| Pagination | Client-side, 15 rows/page — consistent with project scale; no server-side cursor needed |
+| Admin landing redirect | Change `/admin` index child from `AdminDashboardPage` to `AdminCalendarPage`; add `/admin/dashboard` route for direct URL access; remove Dashboard from nav |
+| Status badge styling | New `PaidDetailStatusBadge` component using shadcn/ui `Badge` variant overrides (confirmation: blue/gray; payment: green/yellow) |
+
+## Phase 1: Design
+
+*Artifacts: [data-model.md](./data-model.md), [contracts/](./contracts/), [quickstart.md](./quickstart.md)*
+
+### Files Expected to Change
+
+| File | User Story | Change Description |
+|------|------------|-------------------|
+| `src/App.tsx` | US1, US2 | Change `/admin` index to `AdminCalendarPage`; add `/admin/dashboard` for Dashboard; add `/admin/reports/paid-detail` nested route |
+| `src/layouts/AdminLayout.tsx` | US1 | Remove Dashboard from nav or move to end; Calendar becomes first nav item |
+| `src/features/admin/AdminFinancialReportsPage.tsx` | US2 | Add "View Paid Detail" button that navigates to `/admin/reports/paid-detail?start=...&end=...` |
+| `src/features/admin/financial-reports/types.ts` | US2 | Add `PaidDetailRow` (alias of `NormalizedFinancialBooking`), `PaidDetailOutput` interface |
+| `src/features/admin/financial-reports/schemas.ts` | US2 | Add `paidDetailSearchParamsSchema` for URL param validation |
+| `src/features/admin/financial-reports/financialReportService.ts` | US2 | Add `buildPaidDetail(rows)` — filters `normalizeFinancialRows` output to PAID + active bookings; returns `PaidDetailOutput` |
+| `src/features/admin/financial-reports/usePaidDetail.ts` | US2 | NEW — React Query hook; same Supabase query as `useFinancialReport`; calls `buildPaidDetail` instead of `buildFinancialReport` |
+| `src/features/admin/financial-reports/components/PaidDetailPage.tsx` | US2 | NEW — page container: date range picker, summary header, paginated table, back link |
+| `src/features/admin/financial-reports/components/PaidDetailStatusBadge.tsx` | US2 | NEW — booking status + payment status badge component |
+
+## Constitution Check (Post-Design)
+
+All five gates re-verified after Phase 1 design. No new violations introduced. The date-range URL param schema (new Zod validator) ensures all boundary data entering `PaidDetailPage` is validated before use.
+
+## Complexity Tracking
+
+*No constitution violations — no entries required.*
