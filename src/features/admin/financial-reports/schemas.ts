@@ -48,3 +48,30 @@ export const paidDetailSearchParamsSchema = z.object({
   start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
+
+export const expenseBalanceSearchParamsSchema = z.object({
+  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+})
+
+export const expenseFormSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date is required'),
+  description: z.string().trim().min(1, 'Description is required'),
+  amount: z.number().positive('Amount must be greater than zero'),
+})
+
+const numericAmountSchema = z.union([
+  z.number(),
+  z.string().regex(/^\d+(\.\d+)?$/, 'Invalid numeric amount').transform((value) => Number(value)),
+]).transform((value) => Number(value))
+
+export const expenseRowSchema = z.object({
+  id: z.string(),
+  expense_date: z.string(),
+  description: z.string(),
+  amount_lkr: numericAmountSchema,
+  created_by: z.string().nullable(),
+  created_at: z.string(),
+})
+
+export const expensesResponseSchema = z.array(expenseRowSchema)

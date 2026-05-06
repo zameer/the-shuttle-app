@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, startOfMonth } from 'date-fns'
-import { ExternalLink, Loader2 } from 'lucide-react'
+import { Calculator, ExternalLink, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useFinancialReport } from '@/features/admin/financial-reports/useFinancialReport'
 import OutstandingPendingSection from '@/features/admin/financial-reports/components/OutstandingPendingSection'
@@ -130,6 +130,18 @@ export default function AdminFinancialReportsPage() {
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 View Paid Detail
+              </Button>
+            </div>
+
+            <div className="mt-4 border-t pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate(`/admin/reports/expense-balance?start=${startDate}&end=${endDate}`)}
+                aria-label="Navigate to Expenses and Balance"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                Manage Expenses and Balance
               </Button>
             </div>
           </section>

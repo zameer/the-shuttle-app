@@ -1,6 +1,6 @@
 ﻿# the-shuttle-ksc Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-01
+Auto-generated from all feature plans. Last updated: 2026-05-06
 
 ## Active Technologies
 - TypeScript 6.0.2 with React 19.2.4 + Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, react-hook-form 7.72.1, date-fns 4.1.0, lucide-react 1.8 (003-ui-improvements)
@@ -61,6 +61,8 @@ Auto-generated from all feature plans. Last updated: 2026-05-01
 - [if applicable, e.g., PostgreSQL, CoreData, files or N/A] (030-create-feature-branch)
 - TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, Supabase JS 2.103.0, react-markdown 10.1.0 (030-create-feature-branch)
 - Supabase PostgreSQL — `court_settings` table extension; no new table required (030-create-feature-branch)
+- TypeScript 6.0.2 + React 19.2.4, React Router 7.x, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Tailwind CSS 3.4.17, shadcn/ui, Supabase JS 2.103.0, date-fns 4.1.0 (031-create-feature-branch)
+- Supabase PostgreSQL with RLS; new `expenses` table scoped to admin financial reporting (031-create-feature-branch)
 
 - TypeScript 6.0.2 with React 19.2.4 + Tailwind CSS 3.4.17, React Query 5.99.0, react-hook-form 7.72.1, shadcn/ui, Supabase 2.103.0 (003-ui-improvements)
 
@@ -81,9 +83,9 @@ npm test; npm run lint
 TypeScript 6.0.2 with React 19.2.4: Follow standard conventions
 
 ## Recent Changes
+- 031-create-feature-branch: Added TypeScript 6.0.2 + React 19.2.4, React Router 7.x, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Tailwind CSS 3.4.17, shadcn/ui, Supabase JS 2.103.0, date-fns 4.1.0
+- 031-create-feature-branch: Added TypeScript 6.0.2 + React 19.2.4, React Router 7.x, React Query 5.99.0, react-hook-form 7.72.1, Zod 4.x, Tailwind CSS 3.4.17, shadcn/ui, Supabase JS 2.103.0, date-fns 4.1.0
 - 030-create-feature-branch: Added TypeScript 6.0.2 + React 19.2.4, Vite 8.0, Tailwind CSS 3.4.17, shadcn/ui, React Query 5.99.0, Supabase JS 2.103.0, react-markdown 10.1.0
-- 030-create-feature-branch: Added [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION] + [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
-- 030-create-feature-branch: Added TypeScript 6.0.2 + React 19.2.4, React Router 7.x, React Query 5.99.0, Zod 4.x, date-fns 4.1.0, shadcn/ui, Tailwind CSS 3.4.17
 
 
 <!-- MANUAL ADDITIONS START -->
