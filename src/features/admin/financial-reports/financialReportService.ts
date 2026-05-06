@@ -1,7 +1,9 @@
 import { parseISO } from 'date-fns'
 import type { BookingRowSchema } from './schemas'
 import type {
+  BalanceComputation,
   DetailStatusScope,
+  ExpenseRecord,
   FinancialReportOutput,
   NormalizedFinancialBooking,
   OutstandingBookingStatus,
@@ -299,4 +301,17 @@ export function buildPaidDetail(rows: NormalizedFinancialBooking[]): PaidDetailO
     scope: 'PAID',
     outstandingStatuses: ['CONFIRMED', 'CANCELLED', 'NO_SHOW'],
   })
+}
+
+export function sumExpenses(expenses: ExpenseRecord[]): number {
+  return round2(expenses.reduce((sum, expense) => sum + expense.amountLkr, 0))
+}
+
+export function buildBalanceComputation(input: { paidAmount: number; expenseAmount: number }): BalanceComputation {
+  return {
+    paidAmount: round2(input.paidAmount),
+    expenseAmount: round2(input.expenseAmount),
+    balanceAmount: round2(input.paidAmount - input.expenseAmount),
+    calculatedAt: new Date().toISOString(),
+  }
 }

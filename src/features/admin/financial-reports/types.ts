@@ -128,3 +128,30 @@ export interface PaidDetailAppliedFilters {
   scope: DetailStatusScope
   outstandingStatuses: OutstandingBookingStatus[]
 }
+
+export interface ExpenseRecord {
+  id: string
+  expenseDate: string
+  description: string
+  amountLkr: number
+  createdBy: string | null
+  createdAt: string
+}
+
+export interface ExpenseFormInput {
+  date: string
+  description: string
+  amount: number
+}
+
+export interface BalanceComputation {
+  paidAmount: number
+  expenseAmount: number
+  balanceAmount: number
+  calculatedAt: string
+}
+
+export interface ExpenseBalanceRouteSearchParams {
+  start?: string
+  end?: string
+}
